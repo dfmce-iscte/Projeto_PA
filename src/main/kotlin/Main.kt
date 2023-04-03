@@ -104,4 +104,5 @@ fun main(){
     val jsonNull = JSONNull("null",c1)
     val jsonStr = JSONString("str",c1,"ola")
     println(c)
+    println(c)
 }

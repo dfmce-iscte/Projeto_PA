@@ -6,24 +6,25 @@ class TestMain {
     fun `test object creation` () {
         val rootObject = ObjectJSON()
 
-        JSONNumber("number",rootObject,Number(1))
+        //faz-se JSONNumber(rootObject,1) ou rootObject.addElement(JSONNumber(1))???
+        JSONNumber(rootObject,1,"number")
 
         val array = ArrayJSON("array",rootObject)
-        JSONBoolean("b1",array,true)
-        JSONBoolean("b2",array,false)
+        JSONBoolean(array,true)
+        JSONBoolean(array,false)
 
         val arr2 = ArrayJSON("arr2",rootObject)
         val arrayObject = ObjectJSON("arrayObject",arr2)
-        JSONNumber("numero",arrayObject,Number(101101))
-        JSONString("nome",arrayObject,"Dave Farley")
-        JSONBoolean("internacional",arrayObject,true)
+        JSONNumber(arrayObject,101101,"numero")
+        JSONString(arrayObject,"Dave Farley","nome")
+        JSONBoolean(arrayObject,true,"internacional")
 
         val arrayObject2 = ObjectJSON("arrayObject2",arr2)
-        JSONNumber("numero",arrayObject2,Number(101102))
-        JSONString("nome",arrayObject2,"Martin Fowler")
-        JSONBoolean("internacional",arrayObject2,true)
+        JSONNumber(arrayObject2,101102,"numero")
+        JSONString(arrayObject2,"Martin Fowler","nome")
+        JSONBoolean(arrayObject2,true,"internacional")
 
-        JSONNull("null",rootObject)
+        JSONNull(rootObject,"null")
         println(rootObject)
     }
 }

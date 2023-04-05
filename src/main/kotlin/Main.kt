@@ -42,6 +42,16 @@ class ObjectJSON(override val name: String?=null, override val parent: Composite
             else  auxToString()
     }
 
+    fun addElement(name:String, element: JSONELEMENT) {
+        properties[name] = element
+    }
+
+    override fun accept(v: Visitor) {
+        if (v.visit(this))
+            properties.forEach{ it.value.accept(v) }
+        v.endVisit(this)
+    }
+
 }
 
 class ArrayJSON(override val name: String?=null, override val parent: CompositeJSON? = null) : CompositeJSON {

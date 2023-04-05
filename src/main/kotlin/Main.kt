@@ -51,7 +51,7 @@ class ArrayJSON(override val name: String, override val parentObject: CompositeJ
         parentObject.addElement(this)
     }
     override fun toString(): String {
-        return "\"$name\": [${atributtes.joinToString { it.toString() }}]"
+        return "\"$name\":[${atributtes.joinToString { it.toString() }}]"
     }
 }
 
@@ -64,7 +64,10 @@ abstract class LeafJSON(override val name: String, override val parentObject: Co
         parentObject?.addElement(this)
     }
     override fun toString(): String {
-        return "\"$name\" : \"$value\""
+        if (parentObject is ArrayJSON && value is String) return "\"$value\""
+        else if (parentObject is ArrayJSON) return "$value"
+        else if (value is String) return "\"$name\":\"$value\""
+        return "\"$name\":$value"
     }
 
     override fun accept(v: Visitor) = v.visit(this)
@@ -88,20 +91,3 @@ class JSONBoolean(name: String, parentObject: CompositeJSON?, override val value
 
 class JSONNull(name: String, parentObject: CompositeJSON?) : LeafJSON(name, parentObject)
 
-fun main(){
-    val c=ObjectJSON()
-    val number = JSONNumber("NUMERO",c,Number(1))
-    val array = ArrayJSON("ARRAY",c)
-    val arrayEle = JSONBoolean("b1",array,true)
-    val arrayEle1 = JSONBoolean("b2",array,false)
-    val c3Array = ArrayJSON("c3Array",c)
-    val c3 = ObjectJSON("c3",c3Array)
-    val array1 = JSONNumber("numero",c3,Number(101101))
-    val array2 = JSONString("nome",c3,"Dave Farley")
-    val array3 = JSONBoolean("internacional",c3,true)
-
-    val c1 = ObjectJSON("c1",c)
-    val jsonNull = JSONNull("null",c1)
-    val jsonStr = JSONString("str",c1,"ola")
-    println(c)
-}

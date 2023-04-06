@@ -6,8 +6,10 @@ interface JSONELEMENT {
 }
 
 interface Visitor {
-    fun visit(c: CompositeJSON) : Boolean = true
-    fun endVisit(c: CompositeJSON) {}
+    fun visit(c: ObjectJSON) : Boolean = true
+    fun endVisit(c: ObjectJSON) {}
+    fun visit(c: ArrayJSON) : Boolean = true
+    fun endVisit(c: ArrayJSON) {}
 
     fun visit(l: LeafJSON)
 }
@@ -28,7 +30,7 @@ interface CompositeJSON : JSONELEMENT {
 }
 
 class ObjectJSON(override val name: String?=null, override val parent: CompositeJSON? = null) : CompositeJSON {
-    private var properties: HashMap<String, JSONELEMENT> = HashMap()
+    var properties: HashMap<String, JSONELEMENT> = HashMap()
 
     init {
         addToParent()

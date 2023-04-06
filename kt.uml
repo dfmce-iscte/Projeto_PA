@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>C:/Users/Diogo Cosme/Documents/ISCTE/4º ano/PA/Projeto/src/main/kotlin/Main.kt</OriginalElement>
+  <nodes>
+    <node x="731.5570277575363" y="16.808844721302933">LeafJSON</node>
+    <node x="-30.630126576315945" y="237.70170057670907">ObjectJSON</node>
+    <node x="841.8159313730888" y="228.19734262174234">JSONNull</node>
+    <node x="539.5493824975974" y="228.1973426217423">JSONString</node>
+    <node x="321.78033006234404" y="16.808844721302933">CompositeJSON</node>
+    <node x="690.1549649185981" y="228.19734262174234">JSONNumber</node>
+    <node x="953.5988059908259" y="-139.76787037033375">Visitor</node>
+    <node x="964.4768978275796" y="228.19734262174234">JSONBoolean</node>
+    <node x="278.19623220301673" y="237.70170057670907">ArrayJSON</node>
+    <node x="494.6620929525809" y="-174.90318584093546">JSONELEMENT</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="JSONString" target="LeafJSON" relationship="GENERALIZATION">
+      <point x="-2.775753625883226E-5" y="26.999535054098754" />
+      <point x="601.5493547400612" y="210.0" />
+      <point x="776.7945301112619" y="210.0" />
+      <point x="-44.26249764627437" y="37.999950385730685" />
+    </edge>
+    <edge source="ArrayJSON" target="CompositeJSON" relationship="REALIZATION">
+      <point x="3.2709893673654733E-6" y="-48.99965544620797" />
+      <point x="385.19623547400613" y="118.99165583164958" />
+      <point x="290.7711557504174" y="118.99165583164958" />
+      <point x="290.7711557504174" y="54.80876664531479" />
+      <point x="-89.50039299366024" y="-7.807598814224548E-5" />
+    </edge>
+    <edge source="ObjectJSON" target="CompositeJSON" relationship="REALIZATION">
+      <point x="1.2657631594947816E-4" y="48.999507374361286" />
+      <point x="115.37" y="54.80876664531479" />
+      <point x="-89.50039299366024" y="-7.807598814224548E-5" />
+    </edge>
+    <edge source="LeafJSON" target="JSONELEMENT" relationship="REALIZATION">
+      <point x="-89.5" y="11.249028461718822" />
+      <point x="584.1620929525809" y="66.05787318302175" />
+      <point x="0.0" y="-27.0" />
+    </edge>
+    <edge source="CompositeJSON" target="JSONELEMENT" relationship="INTERFACE_GENERALIZATION">
+      <point x="0.0" y="38.0" />
+      <point x="411.28033006234404" y="66.05787318302175" />
+      <point x="584.1620929525809" y="66.05787318302175" />
+      <point x="584.1620929525809" y="-151.86096534889904" />
+      <point x="-89.5" y="-3.9577795079635685" />
+    </edge>
+    <edge source="JSONNumber" target="LeafJSON" relationship="GENERALIZATION">
+      <point x="18.702833246539512" y="-30.16981968596255" />
+      <point x="778.3577981651376" y="239.2557441620924" />
+      <point x="776.7945301112619" y="239.2557441620924" />
+      <point x="-44.26249764627437" y="37.999950385730685" />
+    </edge>
+    <edge source="JSONBoolean" target="LeafJSON" relationship="GENERALIZATION">
+      <point x="-4.111541954898712E-4" y="26.99965382727234" />
+      <point x="1033.4764866733842" y="210.0" />
+      <point x="776.7945301112619" y="210.0" />
+      <point x="-44.26249764627437" y="37.999950385730685" />
+    </edge>
+    <edge source="JSONNull" target="LeafJSON" relationship="GENERALIZATION">
+      <point x="1.9400917415168806E-4" y="14.499623225788977" />
+      <point x="896.816125382263" y="210.0" />
+      <point x="776.7945301112619" y="210.0" />
+      <point x="-44.26249764627437" y="37.999950385730685" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic" zoom="0.8154613466334164" showDependencies="false" x="570.5" y="116.49999999999997" />
+  <SelectedNodes />
+  <Categories>
+    <Category>Properties</Category>
+  </Categories>
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+

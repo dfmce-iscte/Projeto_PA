@@ -1,16 +1,16 @@
 import kotlin.reflect.KClass
 
-class CheckStructure(val property : String, val type : KClass<*>) : Visitor {
+class CheckStructure(val property: String, val type: KClass<*>) : Visitor {
     var valid = true
 
     override fun visit(l: LeafJSON) {
 
     }
 
-    override fun visit(c: ObjectJSON) : Boolean {
+    override fun visit(c: ObjectJSON): Boolean {
         if (!valid)
             return false
-        if (c.properties[property] != null ) {
+        if (c.properties[property] != null) {
             val leaf = (c.properties[property]!! as LeafJSON)
             if (leaf.value!!::class != type) {
                 valid = false
@@ -22,7 +22,7 @@ class CheckStructure(val property : String, val type : KClass<*>) : Visitor {
 }
 
 
-class CheckArrayStructure(val property : String, val type : ObjectJSON) : Visitor {
+class CheckArrayStructure(val property: String, val type: ObjectJSON) : Visitor {
     var valid = true
     val allProperties = mutableListOf<ArrayJSON>()
 
@@ -30,7 +30,7 @@ class CheckArrayStructure(val property : String, val type : ObjectJSON) : Visito
 
     }
 
-    override fun visit(c: ObjectJSON) : Boolean {
+    override fun visit(c: ObjectJSON): Boolean {
         if (!valid)
             return false
         if (c.parent is ArrayJSON && allProperties.contains(c.parent)) {
@@ -39,8 +39,7 @@ class CheckArrayStructure(val property : String, val type : ObjectJSON) : Visito
                     valid = false
                     return false
                 }
-        }
-        else if (c.properties[property] != null ) {
+        } else if (c.properties[property] != null) {
             val array = (c.properties[property]!! as ArrayJSON)
             allProperties.add(array)
         }

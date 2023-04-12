@@ -33,6 +33,8 @@ class ObjectJSON(override val parent: CompositeJSON? = null, override val name: 
     var properties: HashMap<String, JSONELEMENT> = HashMap()
 
     init {
+        if (parent is ObjectJSON && name == null)
+            throw IllegalArgumentException("Name can't be null when parent is ObjectJSON")
         addToParent()
     }
 

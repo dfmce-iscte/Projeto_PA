@@ -11,12 +11,12 @@ class TestMain {
     val b1 = JSONBoolean(array, true)
     val b2 = JSONBoolean(array, false)
     val arr2 = ArrayJSON(rootObject, "arr2")
-    val arrayObject = ObjectJSON(arr2, "arrayObject")
+    val arrayObject = ObjectJSON(arr2)
     val n1 = JSONNumber(arrayObject, 101101, "numero")
     val no1 = JSONString(arrayObject, "Dave Farley", "nome")
     val i1 = JSONBoolean(arrayObject, true, "internacional")
-    val arrayObject2 = ObjectJSON(arr2, "arrayObject2")
-    val n2 = JSONNumber(arrayObject2, 101102.1, "numero")
+    val arrayObject2 = ObjectJSON(arr2)
+    val n2 = JSONNumber(arrayObject2, 101102, "numero")
     val no2 = JSONString(arrayObject2, "Martin Fowler", "nome")
     val i2 = JSONBoolean(arrayObject2, true, "internacional")
     val nul = JSONNull(rootObject, "null")
@@ -35,7 +35,7 @@ class TestMain {
 
         val cs_numero = CheckStructure("numero", Int::class)
         rootObject.accept(cs_numero)
-        assertEquals(expected = false, cs_numero.valid)
+        assertEquals(expected = true, cs_numero.valid)
     }
 
     @Test

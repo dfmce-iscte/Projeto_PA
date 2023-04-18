@@ -59,20 +59,33 @@ fun Any.toJSON(parent: CompositeJSON?=null, name: String?=null) : ObjectJSON {
 
     val clazz = this::class
     clazz.declaredMemberProperties.forEach{
-        val callThis = it.call(this)
-        val classifier = it.returnType.classifier!!
+        if(!it.hasAnnotation<ExcludeFromJson>()){
+            val callThis = it.call(this)
+            var itName=it.name
+            if(it.hasAnnotation<Name>()){
+                val ann = it.findAnnotation<Name>()!!
+                itName=ann.id
+            }
+            if (it.hasAnnotation<ToJsonString>()){
+                JSONString(obj, callThis as String, itName)
+            }
+            else {
+                val classifier = it.returnType.classifier!!
 //        println("Name: ${it.name} Class: ${it.returnType.classifier} Boolean: ${Boolean::class}")
-        when {
-            classifier == String::class -> JSONString(obj, callThis as String, it.name)
-            classifier == Char::class -> JSONString(obj, (callThis as Char).toString(), it.name)
-            classifier == Boolean::class -> JSONBoolean(obj, callThis as Boolean, it.name)
-            isNumber(classifier) -> JSONNumber(obj, callThis as Number, it.name)
-            isEnum(classifier) -> JSONString(obj, callThis.toString(), it.name)
-            callThis == null -> JSONNull(obj,it.name)
-            isCollection(classifier) -> convertCollectionToArrayJSON(callThis as Collection<*>, it.name, obj)
-            isMap(classifier) -> convertMapToObjectJSON(callThis as Map<*,*>, it.name, obj)
-            (classifier as KClass<*>).isData -> callThis.toJSON(obj, it.name)
+                when {
+                    classifier == String::class -> JSONString(obj, callThis as String, itName)
+                    classifier == Char::class -> JSONString(obj, (callThis as Char).toString(), itName)
+                    classifier == Boolean::class -> JSONBoolean(obj, callThis as Boolean, itName)
+                    isNumber(classifier) -> JSONNumber(obj, callThis as Number, itName)
+                    isEnum(classifier) -> JSONString(obj, callThis.toString(), itName)
+                    callThis == null -> JSONNull(obj, itName)
+                    isCollection(classifier) -> convertCollectionToArrayJSON(callThis as Collection<*>, itName, obj)
+                    isMap(classifier) -> convertMapToObjectJSON(callThis as Map<*, *>, itName, obj)
+                    (classifier as KClass<*>).isData -> callThis.toJSON(obj, itName)
+                }
+            }
         }
+
     }
     return obj
 }

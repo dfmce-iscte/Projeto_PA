@@ -43,8 +43,9 @@ class ObjectJSON(override val parent: CompositeJSON? = null, override val name: 
     }
 
     override fun toString(): String {
-        return if (parent is ObjectJSON) "\"${name}\":${auxToString()}"
-        else auxToString()
+//        return if (parent is ObjectJSON) "\"${name}\":${auxToString()}"
+//        else auxToString()
+        return auxToString()
     }
 
     fun addElement(name: String, element: JSONELEMENT) {

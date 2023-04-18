@@ -1,18 +1,27 @@
 import kotlin.test.Test
 
- data class Point(val x: Int, val y: Int) : DataClass {
+ data class Point(val x: Int, val y: Int) {
     fun moveDown() = Point(x, y + 1)
     fun moveRight() = Point(x + 1, y)
     fun sum(x: Int, y: Int) = Point(this.x + x, this.y + y)
 }
 
-data class Person(val name: String, val age: Int) : DataClass
+data class Person(val name: String, val age: Int)
 
-data class Mix(val name:String="") : DataClass {
+data class Mix(val name:String="")  {
     val list = arrayListOf(1,2,3,4)
+    val listChar = arrayListOf('c','f','g')
     val nullProperty = null
     val person = Person("ZE",7)
     val color = Color.BLUE
+    val number = 0
+    val decimal = 15.56
+    val char='c'
+    val string="STRING"
+    val bool=true
+    val hasMap= hashMapOf("foo" to 1, "bar" to 2)
+    var set= setOf(1, 2, 3, 2, 1)
+
 }
 
 enum class Color(val rgb: Int, val hex: String) {
@@ -40,9 +49,6 @@ class TestReflexao {
     @Test
     fun testReflexaoMix() {
         val obj = Mix("Mix")
-        //obj.toJSON()
-        val json = obj.toJSON()
-        println(json)
-
+        println(obj.toJSON())
     }
 }

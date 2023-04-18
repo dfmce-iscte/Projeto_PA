@@ -1,87 +1,79 @@
 import kotlin.reflect.KClass
 import kotlin.reflect.KClassifier
-import kotlin.reflect.KProperty
-import kotlin.reflect.KType
 import kotlin.reflect.full.*
 
-interface DataClass
+@Target(AnnotationTarget.PROPERTY)
+annotation class Name(val id:String)
 
-fun DataClass.toJSON(parent: CompositeJSON?=null, name: String?=null) : ObjectJSON {
-    fun aux(array: Array<*>, arrayName : String, arrayParent : CompositeJSON): ArrayJSON {
-        val arrayJSON = ArrayJSON(arrayParent,arrayName)
-        array.forEach {
-            when(it) {
-                is Number -> JSONNumber(arrayJSON,it)
-                is Boolean -> JSONBoolean(arrayJSON,it)
-                is String -> JSONString(arrayJSON,it)
-                is Char -> JSONString(arrayJSON,it.toString())
-                is Enum<*> -> JSONString(arrayJSON,it.toString())
-                is DataClass -> it.toJSON(arrayJSON)
-                is Array<*> -> aux(it, arrayName,arrayJSON)
-                null -> JSONNull(parent)
-            }
+@Target(AnnotationTarget.PROPERTY)
+annotation class ToJsonString
+@Target(AnnotationTarget.PROPERTY)
+annotation class ExcludeFromJson
+
+fun isEnum(obj: KClassifier) = obj is KClass<*> && obj.isSubclassOf(Enum::class)
+fun isNumber(obj: KClassifier) = obj is KClass<*> && obj.isSubclassOf(Number::class)
+fun isCollection(obj: KClassifier) = obj is KClass<*> && obj.isSubclassOf(Collection::class)
+fun isMap(obj: KClassifier) = obj is KClass<*> && obj.isSubclassOf(Map::class)
+
+fun convertMapToObjectJSON (map: Map<*,*>, mapName: String, mapParent : CompositeJSON):ObjectJSON {
+    val objectJSON = ObjectJSON(mapParent,mapName)
+    map.forEach {
+        val name = it.key as String
+        when(it.value) {
+            is String -> JSONString(objectJSON,it.value as String,name)
+            is Char -> JSONString(objectJSON,(it.value as Char).toString(),name)
+            is Boolean -> JSONBoolean(objectJSON,it.value as Boolean,name)
+            is Number -> JSONNumber(objectJSON,it.value as Number,name)
+            is Enum<*> -> JSONString(objectJSON,it.toString(),name)
+            null -> JSONNull(objectJSON)
+            is Collection<*> -> convertCollectionToArrayJSON(it.value as Collection<*>,name,objectJSON)
+            is Map<*,*> -> convertMapToObjectJSON(it.value as Map<*,*>,name,objectJSON)
+            else -> (it.value as KClass<*>).toJSON(objectJSON,name)
         }
-        return arrayJSON
     }
+    return objectJSON
+}
 
+fun convertCollectionToArrayJSON(collection: Collection<*>, arrayName : String, arrayParent : CompositeJSON): ArrayJSON {
+    val arrayJSON = ArrayJSON(arrayParent,arrayName)
+    collection.forEach {
+        when(it) {
+            is String -> JSONString(arrayJSON,it)
+            is Char -> JSONString(arrayJSON,it.toString())
+            is Boolean -> JSONBoolean(arrayJSON,it)
+            is Number -> JSONNumber(arrayJSON,it)
+            is Enum<*> -> JSONString(arrayJSON,it.toString())
+            null -> JSONNull(arrayJSON)
+            is Collection<*> -> convertCollectionToArrayJSON(it, arrayName,arrayJSON)
+            is Map<*,*> -> convertMapToObjectJSON(it,arrayName,arrayJSON)
+            else -> (it as KClass<*>).toJSON(arrayJSON)
+        }
+    }
+    return arrayJSON
+}
+
+fun Any.toJSON(parent: CompositeJSON?=null, name: String?=null) : ObjectJSON {
     val obj : ObjectJSON =
         if (parent == null) ObjectJSON()
         else ObjectJSON(parent,name)
 
     val clazz = this::class
-    println("Size: ${clazz.declaredMemberProperties.size}")
     clazz.declaredMemberProperties.forEach{
-        println("${it.name} " + (it.returnType.classifier is DataClass))
-        when(it.returnType.classifier) {
-            Int::class -> JSONNumber(obj,it.call(this) as Number,it.name)
-            Double::class -> JSONNumber(obj,it.call(this) as Number,it.name)
-            Float::class -> JSONNumber(obj,it.call(this) as Number,it.name)
-            Long::class -> JSONNumber(obj,it.call(this) as Number,it.name)
-            Short::class -> JSONNumber(obj,it.call(this) as Number,it.name)
-            Boolean::class -> JSONBoolean(obj,it.call(this) as Boolean,it.name)
-            String::class -> JSONString(obj,it.call(this) as String,it.name)
-            Char::class -> JSONString(obj,it.call(this) as String,it.name)
-            Array::class -> aux((it.call(this) as Array<*>),it.name,obj)
-            is KClass<*> -> {
-                val klass = it.returnType.classifier as KClass<*>
-                if (DataClass::class.java.isAssignableFrom(klass.java)) {
-                    (it.call(this) as DataClass).toJSON(obj, it.name)
-                }
-            }
-            //is DataClass -> (it.call(this) as DataClass).toJSON(obj,it.name)
-            Enum::class -> JSONString(obj,it.call(this).toString(),it.name)
-            null -> JSONNull(obj,it.name)
+        val callThis = it.call(this)
+        val classifier = it.returnType.classifier!!
+//        println("Name: ${it.name} Class: ${it.returnType.classifier} Boolean: ${Boolean::class}")
+        when {
+            classifier == String::class -> JSONString(obj, callThis as String, it.name)
+            classifier == Char::class -> JSONString(obj, (callThis as Char).toString(), it.name)
+            classifier == Boolean::class -> JSONBoolean(obj, callThis as Boolean, it.name)
+            isNumber(classifier) -> JSONNumber(obj, callThis as Number, it.name)
+            isEnum(classifier) -> JSONString(obj, callThis.toString(), it.name)
+            callThis == null -> JSONNull(obj,it.name)
+            isCollection(classifier) -> convertCollectionToArrayJSON(callThis as Collection<*>, it.name, obj)
+            isMap(classifier) -> convertMapToObjectJSON(callThis as Map<*,*>, it.name, obj)
+            (classifier as KClass<*>).isData -> callThis.toJSON(obj, it.name)
         }
     }
     return obj
 }
 
-
-
-//fun Collection<*>.toJSON() : JSONELEMENT {
-//
-//}
-//
-//fun Map<*,*>.toJSON() : JSONELEMENT {
-//
-//}
-//
-//fun Char.toJSON() : JSONELEMENT {
-//
-//}
-//fun Byte.toJSON() : JSONELEMENT {
-//
-//}
-//fun String.toJSON() : JSONELEMENT {
-//
-//}
-//fun Boolean.toJSON() : JSONELEMENT {
-//
-//}
-//fun Number.toJSON() : JSONELEMENT {
-//
-//}
-//
-//fun Enum<*>.toJSON() : JSONELEMENT {
-//
-//}

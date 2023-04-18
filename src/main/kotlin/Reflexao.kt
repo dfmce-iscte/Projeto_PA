@@ -67,7 +67,8 @@ fun Any.toJSON(parent: CompositeJSON?=null, name: String?=null) : ObjectJSON {
                 itName=ann.id
             }
             if (it.hasAnnotation<ToJsonString>()){
-                JSONString(obj, callThis as String, itName)
+                println(itName)
+                JSONString(obj, callThis.toString(), itName)
             }
             else {
                 val classifier = it.returnType.classifier!!

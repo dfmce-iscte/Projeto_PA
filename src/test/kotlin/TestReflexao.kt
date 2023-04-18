@@ -1,5 +1,4 @@
-import kotlin.test.Test
-import kotlin.test.assertEquals
+import kotlin.test.*
 
 data class Point(val x: Int, val y: Int) {
     fun moveDown() = Point(x, y + 1)
@@ -9,53 +8,75 @@ data class Point(val x: Int, val y: Int) {
 
 data class Person(val name: String, val age: Int)
 
-data class Mix(val name:String="")  {
-    val list = arrayListOf(1,2,3,4)
-    val listChar = arrayListOf('c','f','g')
+data class Mix(val name: String = "") {
+    val list = arrayListOf(1, 2, 3, 4)
+    val listChar = arrayListOf('c', 'f', 'g')
     val nullProperty = null
-    val person = Person("ZE",7)
+    val person = Person("ZE", 7)
     val color = Color.BLUE
     val number = 0
     val decimal = 15.56
-    val char='c'
-    val string="STRING"
-    val bool=true
-    val hasMap= hashMapOf("foo" to 1, "bar" to 2)
-    var set= setOf(1, 2, 3, 2, 1)
+    val char = 'c'
+    val string = "STRING"
+    val bool = true
+    val hasMap = hashMapOf("foo" to 1, "bar" to 2)
+    var set = setOf(1, 2, 3, 2, 1)
 
 }
 
-data class MixExclude(val name:String="")  {
-    val list = arrayListOf(1,2,3,4)
-    val listChar = arrayListOf('c','f','g')
+data class MixExclude(val name: String = "") {
+    val list = arrayListOf(1, 2, 3, 4)
+    val listChar = arrayListOf('c', 'f', 'g')
     val nullProperty = null
-    val person = Person("ZE",7)
+    val person = Person("ZE", 7)
     val color = Color.BLUE
     val number = 0
     val decimal = 15.56
-    val char='c'
+    val char = 'c'
+
     @ExcludeFromJson
-    val string="STRING"
-    val bool=true
-    val hasMap= hashMapOf("foo" to 1, "bar" to 2)
-    var set= setOf(1, 2, 3, 2, 1)
+    val string = "STRING"
+    val bool = true
+    val hasMap = hashMapOf("foo" to 1, "bar" to 2)
+    var set = setOf(1, 2, 3, 2, 1)
 
 }
 
-data class MixToJsonString(val name:String="")  {
-    val list = arrayListOf(1,2,3,4)
-    val listChar = arrayListOf('c','f','g')
+data class MixToJsonString(val name: String = "") {
+    @ToJsonString
+    val list = arrayListOf(1, 2, 3, 4)
+    val listChar = arrayListOf('c', 'f', 'g')
     val nullProperty = null
-    val person = Person("ZE",7)
+    val person = Person("ZE", 7)
     val color = Color.BLUE
     val number = 0
 
+    @ToJsonString
     val decimal = 15.56
-    val char='c'
-    val string="STRING"
-    val bool=true
-    val hasMap= hashMapOf("foo" to 1, "bar" to 2)
-    var set= setOf(1, 2, 3, 2, 1)
+    val char = 'c'
+    val string = "STRING"
+    val bool = true
+    val hasMap = hashMapOf("foo" to 1, "bar" to 2)
+    var set = setOf(1, 2, 3, 2, 1)
+
+}
+
+data class MixChangeName(val name: String = "") {
+    @Name("novonome")
+    val list = arrayListOf(1, 2, 3, 4)
+    val listChar = arrayListOf('c', 'f', 'g')
+    val nullProperty = null
+    val person = Person("ZE", 7)
+    val color = Color.BLUE
+    val number = 0
+
+    @Name("fixe")
+    val decimal = 15.56
+    val char = 'c'
+    val string = "STRING"
+    val bool = true
+    val hasMap = hashMapOf("foo" to 1, "bar" to 2)
+    var set = setOf(1, 2, 3, 2, 1)
 
 }
 
@@ -71,12 +92,12 @@ class TestReflexao {
     @Test
     fun testReflexaoDataClass() {
         val obj = Point(3, 2)
-        val p=Person("ZE",7)
+        val p = Person("ZE", 7)
         //obj.toJSON()
         val json = obj.toJSON()
-        val json1=p.toJSON()
+        val json1 = p.toJSON()
         println(json1)
-       // println(json.properties)
+        // println(json.properties)
         println(json.toString())
 
     }
@@ -90,7 +111,32 @@ class TestReflexao {
     @Test
     fun testReflexaoExcludeFromJson() {
         val obj = MixExclude("Mix")
-        val json=obj.toJSON()
-        assertEquals(json.properties["string"],null)
+        val json = obj.toJSON()
+        println(json)
+        assertEquals(json.properties["string"], null)
+    }
+
+    @Test
+    fun testReflexaoToJsonString() {
+//        val x=ObjectJSON()
+//        val z=JSONNumber(x,14,"nome")
+//        println(x.properties["nome"].)
+        val obj = MixToJsonString("Mix")
+        val json = obj.toJSON()
+        assertEquals(json.properties["decimal"]!!::class.simpleName,"JSONString")
+        println(json)
+    }
+    //VER QUANDO A TAG ESTÁ PARA LISTAS OU HASHMAPS
+
+    @Test
+    fun testReflexaoChangeName() {
+        val obj = MixChangeName("Mix")
+        val json = obj.toJSON()
+        assertEquals(json.properties["decimal"], null)
+        assertTrue("fixe" in json.properties)
+        assertFalse("decimal" in json.properties)
+        println(json)
+
+
     }
 }

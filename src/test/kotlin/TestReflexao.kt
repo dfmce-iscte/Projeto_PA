@@ -1,3 +1,10 @@
+import java.lang.IllegalArgumentException
+import kotlin.reflect.KClass
+import kotlin.reflect.KClassifier
+import kotlin.reflect.KProperty
+import kotlin.reflect.full.declaredMemberProperties
+import kotlin.reflect.full.isSubclassOf
+import kotlin.reflect.full.primaryConstructor
 import kotlin.test.*
 
 data class Point(val x: Int, val y: Int) {
@@ -88,6 +95,12 @@ enum class Color(val rgb: Int, val hex: String) {
 
 class TestReflexao {
 
+    @Test
+    fun testReflexao() {
+        val zed = Color.BLUE
+        val clazz = zed::class
+
+    }
 
     @Test
     fun testReflexaoDataClass() {
@@ -136,7 +149,6 @@ class TestReflexao {
         assertTrue("fixe" in json.properties)
         assertFalse("decimal" in json.properties)
         println(json)
-
 
     }
 }

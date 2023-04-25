@@ -1,5 +1,5 @@
 interface JSONELEMENT {
-    val parent: CompositeJSON?
+    var parent: CompositeJSON?
 
     fun accept(v: Visitor)
 
@@ -11,12 +11,15 @@ interface Visitor {
     fun visit(c: ArrayJSON): Boolean = true
     fun endVisit(c: ArrayJSON) {}
 
-    fun visit(l: LeafJSON)
+    fun visit(l: JSONNumber) {}
+    fun visit(l: JSONString) {}
+    fun visit(l: JSONBoolean) {}
+    fun visit(l: JSONNull) {}
 }
 
 interface CompositeJSON : JSONELEMENT {
     val name: String?
-    override val parent: CompositeJSON?
+    override var parent: CompositeJSON?
 
     override fun accept(v: Visitor)
 
@@ -29,8 +32,8 @@ interface CompositeJSON : JSONELEMENT {
 
 }
 
-class ObjectJSON(override val parent: CompositeJSON? = null, override val name: String? = null) : CompositeJSON {
-    var properties: HashMap<String, JSONELEMENT> = HashMap()
+class ObjectJSON(override var parent: CompositeJSON? = null, override val name: String? = null) : CompositeJSON {
+    var properties: LinkedHashMap<String, JSONELEMENT> = LinkedHashMap()
 
     init {
         if (parent is ObjectJSON && name == null)
@@ -60,7 +63,7 @@ class ObjectJSON(override val parent: CompositeJSON? = null, override val name: 
 
 }
 
-class ArrayJSON(override val parent: CompositeJSON? = null, override val name: String? = null) : CompositeJSON {
+class ArrayJSON(override var parent: CompositeJSON? = null, override val name: String? = null) : CompositeJSON {
     val elements = mutableListOf<JSONELEMENT>()
 
     fun addElement(element: JSONELEMENT) {
@@ -84,33 +87,77 @@ class ArrayJSON(override val parent: CompositeJSON? = null, override val name: S
 }
 
 
-// value pode ser open??
-abstract class LeafJSON(name: String, open val value: Any? = null, final override val parent: CompositeJSON?) :
-    JSONELEMENT {
 
-    init {
-        if (parent is ObjectJSON)
-            parent.addElement(name, this)
-        else if (parent is ArrayJSON)
-            parent.addElement(this)
+class JSONString(val value: String) : JSONELEMENT {
+    override var parent: CompositeJSON? = null
+
+    constructor(value: String, parent: ObjectJSON, name: String) : this(value = value) {
+        parent.addElement(name, this)
+        this.parent = parent
     }
 
-    override fun toString(): String {
-        return if (value is String) "\"$value\""
-        else "$value"
+    constructor(value: String, parent: ArrayJSON) : this(value = value) {
+        parent.addElement(this)
+        this.parent = parent
     }
+
+    override fun toString(): String = "\"$value\""
 
     override fun accept(v: Visitor) = v.visit(this)
 }
 
-class JSONString(parentObject: CompositeJSON?, override val value: String, name: String = "") :
-    LeafJSON(name, value, parentObject)
+class JSONNumber(val value: Number) : JSONELEMENT {
+    override var parent: CompositeJSON? = null
 
-class JSONNumber(parentObject: CompositeJSON?, override val value: Number, name: String = "") :
-    LeafJSON(name, value, parentObject)
+    constructor(value: Number, parent: ObjectJSON, name: String) : this(value = value) {
+        parent.addElement(name, this)
+        this.parent = parent
+    }
 
-class JSONBoolean(parentObject: CompositeJSON?, override val value: Boolean, name: String = "") :
-    LeafJSON(name, value, parentObject)
+    constructor(value: Number, parent: ArrayJSON) : this(value = value) {
+        parent.addElement(this)
+        this.parent = parent
+    }
 
-class JSONNull(parentObject: CompositeJSON?, name: String = "") : LeafJSON(name, parent = parentObject)
+    override fun toString(): String = valueToString(value)
 
+    override fun accept(v: Visitor) = v.visit(this)
+}
+
+class JSONBoolean(val value: Boolean) : JSONELEMENT {
+    override var parent: CompositeJSON? = null
+
+    constructor(value: Boolean, parent: ObjectJSON, name: String) : this(value = value) {
+        parent.addElement(name, this)
+        this.parent = parent
+    }
+
+    constructor(value: Boolean, parent: ArrayJSON) : this(value = value) {
+        parent.addElement(this)
+        this.parent = parent
+    }
+
+    override fun toString(): String = valueToString(value)
+
+    override fun accept(v: Visitor) = v.visit(this)
+}
+
+class JSONNull(val value : Any? = null) : JSONELEMENT {
+    override var parent: CompositeJSON? = null
+
+    constructor(parent: ObjectJSON, name: String) : this() {
+        parent.addElement(name, this)
+        this.parent = parent
+    }
+
+    constructor(parent: ArrayJSON) : this() {
+        parent.addElement(this)
+        this.parent = parent
+    }
+
+    override fun toString(): String = valueToString(value)
+
+    override fun accept(v: Visitor) = v.visit(this)
+}
+
+fun valueToString(value: Any?): String = "$value"

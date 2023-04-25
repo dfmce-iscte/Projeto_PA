@@ -4,12 +4,12 @@ import kotlin.test.assertEquals
 class TestMain {
 
     val rootObject = ObjectJSON()
-    val n = JSONNumber(rootObject, 1, "number")
+    val n = JSONNumber(1, rootObject, "number")
     val testNum = ObjectJSON(rootObject, "teste")
-    val numbers = JSONNumber(testNum, 5, "number")
+    val numbers = JSONNumber( 5,testNum, "number")
     val array = ArrayJSON(rootObject, "array")
-    val b1 = JSONBoolean(array, true)
-    val b2 = JSONBoolean(array, false)
+    val b1 = JSONBoolean(true, array)
+    val b2 = JSONBoolean(false, array)
     val arr2 = ArrayJSON(rootObject, "arr2")
     val arrayObject = ObjectJSON(arr2)
     val n1 = JSONNumber( 101101,arrayObject, "numero")

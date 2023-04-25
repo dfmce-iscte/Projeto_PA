@@ -3,10 +3,6 @@ import kotlin.reflect.KClass
 class SearchForArray(private val property: String) : Visitor {
     var list = mutableListOf<String>()
 
-    override fun visit(l: LeafJSON) {
-
-    }
-
     override fun visit(c: ObjectJSON): Boolean {
         c.properties[property]?.let { list.add(it.toString()) }
         //  var x = c.properties.filter { it.key == property }
@@ -15,6 +11,7 @@ class SearchForArray(private val property: String) : Visitor {
         // }
         return true
     }
+
 }
 
 
@@ -39,8 +36,16 @@ class CheckStructure(val property: String, val type: KClass<*>) : Visitor {
         if (!valid)
             return false
         if (c.properties[property] != null) {
-            val leaf = (c.properties[property]!! as LeafJSON)
-            if (leaf.value!!::class != type) {
+            val element = (c.properties[property]!!)
+            var value: Any? = null
+
+            when(element) {
+                is JSONString -> value = (element as JSONString).value
+                is JSONNumber -> value = (element as JSONNumber).value
+                is JSONBoolean -> value = (element as JSONBoolean).value
+            }
+
+            if (value!!::class != type) {
                 valid = false
                 return false
             }
@@ -53,10 +58,6 @@ class CheckStructure(val property: String, val type: KClass<*>) : Visitor {
 class CheckArrayStructure(val array: String, val type: ObjectJSON) : Visitor {
     var valid = true
     val allProperties = mutableListOf<ArrayJSON>()
-
-    override fun visit(l: LeafJSON) {
-
-    }
 
     override fun visit(c: ObjectJSON): Boolean {
         if (!valid)

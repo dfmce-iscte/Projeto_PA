@@ -151,4 +151,12 @@ class TestReflexao {
         println(json)
 
     }
+
+    @Test
+    fun `test if it toJSON() fails`() {
+        val i = 0
+        assertFailsWith<IllegalArgumentException> { i.toJSON() }
+    }
+
+
 }

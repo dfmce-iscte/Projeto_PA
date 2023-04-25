@@ -13,7 +13,9 @@ annotation class ExcludeFromJson
 
 fun isEnum(obj: KClassifier) = obj is KClass<*> && obj.isSubclassOf(Enum::class)
 fun isNumber(obj: KClassifier) = obj is KClass<*> && obj.isSubclassOf(Number::class)
-fun isCollection(obj: KClassifier) = obj is KClass<*> && obj.isSubclassOf(Collection::class)
+
+//fun isCollection(obj: KClassifier) = obj is KClass<*> && obj.isSubclassOf(Collection::class)
+fun isIterable(obj: KClassifier) = obj is KClass<*> && obj.isSubclassOf(Iterable::class)
 fun isMap(obj: KClassifier) = obj is KClass<*> && obj.isSubclassOf(Map::class)
 
 fun convertMapToObjectJSON(map: Map<*, *>, mapParent: CompositeJSON, mapName: String): ObjectJSON {

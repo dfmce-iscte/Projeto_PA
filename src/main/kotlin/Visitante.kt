@@ -21,9 +21,7 @@ class SearchForArray(private val property: String) : Visitor {
 class SearchForObject(private val property1: String, private val property2: String) : Visitor {
     var list = mutableListOf<ObjectJSON>()
 
-    override fun visit(l: LeafJSON) {
 
-    }
 
     override fun visit(c: ObjectJSON): Boolean {
         if (c.properties.contains(property1) && c.properties.contains(property2)) {
@@ -36,10 +34,6 @@ class SearchForObject(private val property1: String, private val property2: Stri
 
 class CheckStructure(val property: String, val type: KClass<*>) : Visitor {
     var valid = true
-
-    override fun visit(l: LeafJSON) {
-
-    }
 
     override fun visit(c: ObjectJSON): Boolean {
         if (!valid)

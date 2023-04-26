@@ -4,7 +4,7 @@ class SearchForArray(private val property: String) : Visitor {
     var list = mutableListOf<String>()
 
     override fun visit(c: ObjectJSON): Boolean {
-        c.properties[property]?.let { list.add(it.toString()) }
+        c.getProperties()[property]?.let { list.add(it.toString()) }
         //  var x = c.properties.filter { it.key == property }
         //  if (x.isNotEmpty()) {
         //      list.add(x[property].toString())
@@ -19,9 +19,8 @@ class SearchForObject(private val property1: String, private val property2: Stri
     var list = mutableListOf<ObjectJSON>()
 
 
-
     override fun visit(c: ObjectJSON): Boolean {
-        if (c.properties.contains(property1) && c.properties.contains(property2)) {
+        if (c.getProperties().contains(property1) && c.getProperties().contains(property2)) {
             list.add(c)
         }
         return true
@@ -33,16 +32,18 @@ class CheckStructure(val property: String, val type: KClass<*>) : Visitor {
     var valid = true
 
     override fun visit(c: ObjectJSON): Boolean {
+
         if (!valid)
             return false
-        if (c.properties[property] != null) {
-            val element = (c.properties[property]!!)
+        if (c.getProperties()[property] != null) {
+            val element = (c.getProperties()[property]!!)
             var value: Any? = null
 
-            when(element) {
-                is JSONString -> value = element.value
-                is JSONNumber -> value = element.value
-                is JSONBoolean -> value = element.value
+            when (element) {
+                is JSONString -> value = element.getValue()
+                is JSONNumber -> value = element.getValue()
+                is JSONBoolean -> value = element.getValue()
+                else -> JSONNull()
             }
 
             if (value!!::class != type) {
@@ -63,17 +64,17 @@ class CheckArrayStructure(val array: String, val type: ObjectJSON) : Visitor {
         if (!valid)
             return false
         if (allProperties.contains(c.parent)) {
-            for (p in type.properties)
-                if (c.properties[p.key] == null || c.properties[p.key]!!::class != p.value::class) {
+            for (p in type.getProperties())
+                if (c.getProperties()[p.key] == null || c.getProperties()[p.key]!!::class != p.value::class) {
                     valid = false
                     return false
                 }
-        } else if (c.properties[array] != null) {
-            if (c.properties[array]!!::class != ArrayJSON::class) {
+        } else if (c.getProperties()[array] != null) {
+            if (c.getProperties()[array]!!::class != ArrayJSON::class) {
                 valid = false
                 return false
             }
-            val array = (c.properties[array]!! as ArrayJSON)
+            val array = (c.getProperties()[array]!! as ArrayJSON)
             allProperties.add(array)
         }
         return true

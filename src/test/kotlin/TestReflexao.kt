@@ -98,7 +98,7 @@ class TestReflexao {
     @Test
     fun testReflexao() {
         val zed = Color.BLUE
-        val clazz = zed::class
+        println(zed.toJSON())
 
     }
 
@@ -125,8 +125,10 @@ class TestReflexao {
     fun testReflexaoExcludeFromJson() {
         val obj = MixExclude("Mix")
         val json = obj.toJSON()
-        println(json)
-        assertEquals(json.properties["string"], null)
+        if (json is ObjectJSON) {
+            assertEquals(json.getProperties()["string"],null)
+        }
+
     }
 
     @Test
@@ -136,8 +138,10 @@ class TestReflexao {
 //        println(x.properties["nome"].)
         val obj = MixToJsonString("Mix")
         val json = obj.toJSON()
-        assertEquals(json.properties["decimal"]!!::class.simpleName,"JSONString")
-        println(json)
+        if (json is ObjectJSON) {
+            assertEquals(json.getProperties()["decimal"]!!::class.simpleName, "JSONString")
+            println(json)
+        }
     }
     //VER QUANDO A TAG ESTÁ PARA LISTAS OU HASHMAPS
 

@@ -13,13 +13,15 @@ annotation class ExcludeFromJson
 
 fun isEnum(obj: KClassifier) = obj is KClass<*> && obj.isSubclassOf(Enum::class)
 fun isNumber(obj: KClassifier) = obj is KClass<*> && obj.isSubclassOf(Number::class)
-
-//fun isCollection(obj: KClassifier) = obj is KClass<*> && obj.isSubclassOf(Collection::class)
 fun isIterable(obj: KClassifier) = obj is KClass<*> && obj.isSubclassOf(Iterable::class)
 fun isMap(obj: KClassifier) = obj is KClass<*> && obj.isSubclassOf(Map::class)
 
 fun convertMapToObjectJSON(map: Map<*, *>, mapParent: CompositeJSON, mapName: String): ObjectJSON {
-    val objectJSON = ObjectJSON(mapParent, mapName)
+    val objectJSON =
+        when(mapParent) {
+            is ObjectJSON -> ObjectJSON(mapParent, mapName)
+            else -> ObjectJSON(mapParent)
+        }
     map.forEach {
         val name = it.key as String
         when (it.value) {
@@ -54,7 +56,11 @@ fun getEnumProperties(obj: ObjectJSON, enum: Enum<*>, name: String) {
 }
 
 fun convertIterableToArrayJSON(collection: Iterable<*>, arrayParent: CompositeJSON, arrayName: String): ArrayJSON {
-    val arrayJSON = ArrayJSON(arrayParent, arrayName)
+    val arrayJSON =
+        when(arrayParent) {
+            is ObjectJSON -> ArrayJSON(arrayParent, arrayName)
+            else -> ArrayJSON(arrayParent)
+        }
     collection.forEach {
         when (it) {
             is String -> JSONString(value = it, parent = arrayJSON)
@@ -71,13 +77,18 @@ fun convertIterableToArrayJSON(collection: Iterable<*>, arrayParent: CompositeJS
     return arrayJSON
 }
 
+
 fun Any.toJSON(parent: CompositeJSON? = null, name: String? = null): ObjectJSON {
     val clazz = this::class
     if (!clazz.isData) throw IllegalArgumentException("This function can only be used with object class.")
+    if (parent is ObjectJSON && name == null)
+        throw IllegalArgumentException("The name of the object must be informed when the parent is a ObjectJSON.")
 
     val obj: ObjectJSON =
-        if (parent == null) ObjectJSON()
-        else ObjectJSON(parent, name)
+        when (parent) {
+            is ObjectJSON -> ObjectJSON(parent, name!!)
+            else -> ObjectJSON(parent)
+        }
 
     clazz.declaredMemberProperties.forEach {
         if (!it.hasAnnotation<ExcludeFromJson>()) {

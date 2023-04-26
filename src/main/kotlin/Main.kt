@@ -2,7 +2,6 @@ sealed interface JsonElement {
     val parent: CompositeJSON?
 
     fun accept(v: Visitor)
-
 }
 
 interface Visitor {
@@ -22,11 +21,11 @@ sealed interface CompositeJSON : JsonElement {
 
     override fun accept(v: Visitor)
 
-    abstract override fun toString(): String
+    override fun toString(): String
 
 }
 
-class ObjectJSON(override val parent: CompositeJSON? = null) : CompositeJSON(parent) {
+class ObjectJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
     constructor(parent: ObjectJSON, name: String) : this(parent) {
         parent.addElement(name, this)
     }
@@ -89,7 +88,6 @@ class JSONString(private val value: String, override val parent: CompositeJSON? 
     constructor(value: String, parent: ObjectJSON, name: String) : this(value = value, parent = parent) {
         parent.addElement(name, this)
     }
-
     init {
         if (parent is ArrayJSON) parent.addElement(this)
     }
@@ -148,6 +146,6 @@ class JSONNull(private val value: Any? = null, override val parent: CompositeJSO
     fun getValue() = value
 }
 
-fun valueToString(value: Any?): String = "$value"
+private fun valueToString(value: Any?): String = "$value"
 
 

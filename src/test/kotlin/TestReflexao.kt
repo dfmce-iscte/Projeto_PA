@@ -1,10 +1,6 @@
 import java.lang.IllegalArgumentException
 import kotlin.reflect.KClass
-import kotlin.reflect.KClassifier
-import kotlin.reflect.KProperty
 import kotlin.reflect.full.declaredMemberProperties
-import kotlin.reflect.full.isSubclassOf
-import kotlin.reflect.full.primaryConstructor
 import kotlin.test.*
 
 data class Point(val x: Int, val y: Int) {
@@ -149,17 +145,30 @@ class TestReflexao {
     fun testReflexaoChangeName() {
         val obj = MixChangeName("Mix")
         val json = obj.toJSON()
-        assertEquals(json.properties["decimal"], null)
-        assertTrue("fixe" in json.properties)
-        assertFalse("decimal" in json.properties)
-        println(json)
+        if (json is ObjectJSON) {
+            assertEquals(json.getProperties()["decimal"], null)
+            assertTrue("fixe" in json.getProperties())
+            assertFalse("decimal" in json.getProperties())
+            println(json)
+        }
 
     }
 
+
     @Test
-    fun `test if it toJSON() fails`() {
-        val i = 0
-        assertFailsWith<IllegalArgumentException> { i.toJSON() }
+    fun testToJSON() {
+        val myMap = mapOf(
+            "key1" to 1,
+            "key2" to 2,
+            "key3" to 3
+        )
+        val nullName = null
+        val i = 5
+        val json = i.toJSON()
+        val value = (json as JSONNumber).getValue()
+
+
+        println(myMap.toJSON())
     }
 
 

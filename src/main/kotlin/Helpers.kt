@@ -10,6 +10,18 @@ fun main() {
 }
 
 class Editor {
+    val model=JsonValues(JSONString("{" +
+            "\"name\": \"Josue\"," +
+            "\"age\": 30," +
+            "\"address\": {" +
+            "\"street\": \"Rua 1\"," +
+            "\"number\": 123" +
+            "}," +
+            "\"phones\": [" +
+            "\"1234-5678\"," +
+            "\"8765-4321\"" +
+            "]" +
+            "}"))
     val frame = JFrame("Josue - JSON Object Editor").apply {
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         layout = GridLayout(0, 2)
@@ -17,20 +29,28 @@ class Editor {
 
         val left = JPanel()
         left.layout = GridLayout()
-        val scrollPane = JScrollPane(testPanel()).apply {
+        val scrollPane=ScrollPane(model)
+        left.add(scrollPane)
+
+        val scrollPane1 = JScrollPane(testPanel()).apply {
             horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS
             verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_ALWAYS
         }
-        left.add(scrollPane)
+        left.add(scrollPane1)
+
         add(left)
 
         val right = JPanel()
         right.layout = GridLayout()
-        val srcArea = JTextArea()
-        srcArea.tabSize = 2
-        srcArea.text = "TODO"
-        right.add(srcArea)
+        val labelView=LabelView(model)
+        labelView.tabSize=2
+        right.add(labelView)
         add(right)
+//        val srcArea = JTextArea()
+//        srcArea.tabSize = 2
+//        srcArea.text = "TODO"
+//        right.add(srcArea)
+//        add(right)
     }
 
     fun open() {

@@ -1,5 +1,6 @@
 import kotlin.reflect.KClass
 import kotlin.reflect.KClassifier
+import kotlin.reflect.KProperty
 import kotlin.reflect.full.*
 
 @Target(AnnotationTarget.PROPERTY)
@@ -11,17 +12,17 @@ annotation class ToJsonString
 @Target(AnnotationTarget.PROPERTY)
 annotation class ExcludeFromJson
 
-fun isEnum(obj: KClassifier) = obj is KClass<*> && obj.isSubclassOf(Enum::class)
-fun isNumber(obj: KClassifier) = obj is KClass<*> && obj.isSubclassOf(Number::class)
-fun isIterable(obj: KClassifier) = obj is KClass<*> && obj.isSubclassOf(Iterable::class)
-fun isMap(obj: KClassifier) = obj is KClass<*> && obj.isSubclassOf(Map::class)
+private fun isEnum(obj: KClassifier) = obj is KClass<*> && obj.isSubclassOf(Enum::class)
+private fun isNumber(obj: KClassifier) = obj is KClass<*> && obj.isSubclassOf(Number::class)
+private fun isIterable(obj: KClassifier) = obj is KClass<*> && obj.isSubclassOf(Iterable::class)
+private fun isMap(obj: KClassifier) = obj is KClass<*> && obj.isSubclassOf(Map::class)
 
-fun convertMapToObjectJSON(map: Map<*, *>, mapParent: CompositeJSON, mapName: String): ObjectJSON {
-    val objectJSON =
-        when(mapParent) {
-            is ObjectJSON -> ObjectJSON(mapParent, mapName)
-            else -> ObjectJSON(mapParent)
-        }
+private fun convertMapToObjectJSON(
+    map: Map<*, *>,
+    mapParent: CompositeJSON? = null,
+    mapName: String? = null
+): ObjectJSON {
+    val objectJSON = createObjectJSON(mapParent, mapName)
     map.forEach {
         val name = it.key as String
         when (it.value) {
@@ -29,37 +30,26 @@ fun convertMapToObjectJSON(map: Map<*, *>, mapParent: CompositeJSON, mapName: St
             is Char -> JSONString(value = (it.value as Char).toString(), parent = objectJSON, name = name)
             is Boolean -> JSONBoolean(value = it.value as Boolean, parent = objectJSON, name = name)
             is Number -> JSONNumber(value = it.value as Number, parent = objectJSON, name = name)
-            is Enum<*> -> getEnumProperties(objectJSON, it.value as Enum<*>, name)
+            is Enum<*> -> JSONString(value = it.toString(), parent = objectJSON, name = name)
             null -> JSONNull(parent = objectJSON, name = name)
-            is Iterable<*> -> convertIterableToArrayJSON(it.value as Collection<*>,objectJSON, name)
+            is Iterable<*> -> convertIterableToArrayJSON(it.value as Collection<*>, objectJSON, name)
             is Map<*, *> -> convertMapToObjectJSON(it.value as Map<*, *>, objectJSON, name)
-            else -> (it.value as KClass<*>).toJSON(objectJSON, name)
+            else -> toJSONObject(value = it.value!!, parent = objectJSON, name = name)
         }
     }
     return objectJSON
 }
 
-fun getEnumProperties(obj: ObjectJSON, enum: Enum<*>, name: String) {
-    val objectJSON = ObjectJSON(obj, name)
-    val enumClass = enum.javaClass.declaredFields
-        .filter { it.type.isPrimitive || it.type == String::class.java }
-        .map { it.isAccessible = true; it.name to it.get(enum) }
-    for ((name, value) in enumClass) {
-        when (value) {
-            is String -> JSONString(value = value, parent = objectJSON, name = name)
-            is Char -> JSONString(value = value.toString(), parent = objectJSON, name = name)
-            is Boolean -> JSONBoolean(value = value, parent = objectJSON, name = name)
-            is Number -> JSONNumber(value = value, parent = objectJSON, name = name)
-
-        }
-    }
-}
-
-fun convertIterableToArrayJSON(collection: Iterable<*>, arrayParent: CompositeJSON, arrayName: String): ArrayJSON {
+private fun convertIterableToArrayJSON(
+    collection: Iterable<*>,
+    arrayParent: CompositeJSON? = null,
+    arrayName: String? = null
+): ArrayJSON {
     val arrayJSON =
-        when(arrayParent) {
-            is ObjectJSON -> ArrayJSON(arrayParent, arrayName)
-            else -> ArrayJSON(arrayParent)
+        when (arrayParent) {
+            is ObjectJSON -> ArrayJSON(arrayParent, arrayName!!)
+            is ArrayJSON -> ArrayJSON(arrayParent)
+            else -> ArrayJSON()
         }
     collection.forEach {
         when (it) {
@@ -69,51 +59,41 @@ fun convertIterableToArrayJSON(collection: Iterable<*>, arrayParent: CompositeJS
             is Number -> JSONNumber(value = it, parent = arrayJSON)
             is Enum<*> -> JSONString(value = it.toString(), parent = arrayJSON)
             null -> JSONNull(parent = arrayJSON)
-            is Collection<*> -> convertIterableToArrayJSON(it, arrayJSON, arrayName)
-            is Map<*, *> -> convertMapToObjectJSON(it,arrayJSON,arrayName)
-            else -> (it as KClass<*>).toJSON(arrayJSON)
+            is Collection<*> -> convertIterableToArrayJSON(it, arrayJSON)
+            is Map<*, *> -> convertMapToObjectJSON(it, arrayJSON)
+            else -> toJSONObject(value = it, parent = arrayJSON)
         }
     }
     return arrayJSON
 }
 
 
-fun Any.toJSON(parent: CompositeJSON? = null, name: String? = null): ObjectJSON {
-    val clazz = this::class
-    if (!clazz.isData) throw IllegalArgumentException("This function can only be used with object class.")
+private fun toJSONObject(value: Any, parent: CompositeJSON? = null, name: String? = null): ObjectJSON {
+    val clazz = value::class
     if (parent is ObjectJSON && name == null)
         throw IllegalArgumentException("The name of the object must be informed when the parent is a ObjectJSON.")
 
-    val obj: ObjectJSON =
-        when (parent) {
-            is ObjectJSON -> ObjectJSON(parent, name!!)
-            else -> ObjectJSON(parent)
-        }
+    val obj = createObjectJSON(parent, name)
 
     clazz.declaredMemberProperties.forEach {
         if (!it.hasAnnotation<ExcludeFromJson>()) {
-            val callThis = it.call(this)
-            var itName = it.name
-            if (it.hasAnnotation<Name>()) {
-                val ann = it.findAnnotation<Name>()!!
-                itName = ann.id
-            }
+            val callThis = it.call(value)
+            val itName = checkIfHasAnnotationName(it)
+
             if (it.hasAnnotation<ToJsonString>()) {
-                println(itName)
                 JSONString(value = callThis.toString(), parent = obj, name = itName)
             } else {
                 val classifier = it.returnType.classifier!!
-//        println("Name: ${it.name} Class: ${it.returnType.classifier} Boolean: ${Boolean::class}")
                 when {
                     classifier == String::class -> JSONString(value = callThis as String, parent = obj, name = itName)
                     classifier == Char::class -> JSONString(value = (callThis as Char).toString(), parent = obj, name = itName)
-                    classifier == Boolean::class -> JSONBoolean(value = callThis as Boolean, parent = obj, name = itName)
+                    classifier == Boolean::class -> JSONBoolean(value = callThis as Boolean,parent = obj,name = itName)
                     isNumber(classifier) -> JSONNumber(value = callThis as Number, parent = obj, name = itName)
-                    isEnum(classifier) -> getEnumProperties(obj, callThis as Enum<*>,itName)
+                    isEnum(classifier) -> JSONString(value = callThis.toString(), parent = obj, name = itName)
                     callThis == null -> JSONNull(parent = obj, name = itName)
                     isIterable(classifier) -> convertIterableToArrayJSON(callThis as Collection<*>, obj, itName)
                     isMap(classifier) -> convertMapToObjectJSON(callThis as Map<*, *>, obj, itName)
-                    (classifier as KClass<*>).isData -> callThis.toJSON(obj, itName)
+                    (classifier as KClass<*>).isData -> toJSONObject(callThis, obj, itName)
                 }
             }
         }
@@ -121,5 +101,31 @@ fun Any.toJSON(parent: CompositeJSON? = null, name: String? = null): ObjectJSON 
     }
     return obj
 }
+
+private fun checkIfHasAnnotationName(it: KProperty<*>): String =
+    if (it.hasAnnotation<Name>()) it.findAnnotation<Name>()!!.id
+    else it.name
+
+private fun createObjectJSON(parent: CompositeJSON? = null, name: String? = null): ObjectJSON =
+    when (parent) {
+        is ObjectJSON -> ObjectJSON(parent, name!!)
+        is ArrayJSON -> ObjectJSON(parent)
+        else -> ObjectJSON()
+    }
+
+fun Any.toJSON(): JsonElement {
+    return when (this) {
+        is String -> JSONString(value = this)
+        is Char -> JSONString(value = this.toString())
+        is Boolean -> JSONBoolean(value = this)
+        is Number -> JSONNumber(value = this)
+        is Enum<*> -> JSONString(value = this.toString())
+        is Collection<*> -> convertIterableToArrayJSON(this)
+        is Map<*, *> -> convertMapToObjectJSON(this)
+        else -> toJSONObject(this)
+    }
+
+}
+
 
 

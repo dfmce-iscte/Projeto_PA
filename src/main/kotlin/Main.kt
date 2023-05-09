@@ -1,8 +1,7 @@
-interface JSONELEMENT {
+sealed interface JsonElement {
     val parent: CompositeJSON?
 
     fun accept(v: Visitor)
-
 }
 
 interface Visitor {
@@ -17,24 +16,29 @@ interface Visitor {
     fun visit(l: JSONNull) {}
 }
 
-abstract class CompositeJSON(override val parent: CompositeJSON? = null) : JSONELEMENT {
+sealed interface CompositeJSON : JsonElement {
+    override val parent: CompositeJSON?
 
-    abstract override fun accept(v: Visitor)
+    override fun accept(v: Visitor)
 
-    abstract override fun toString(): String
+    override fun toString(): String
 
 }
 
-class ObjectJSON(override val parent: CompositeJSON? = null) : CompositeJSON(parent) {
+class ObjectJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
     constructor(parent: ObjectJSON, name: String) : this(parent) {
         parent.addElement(name, this)
     }
 
     init {
-        if(parent is ArrayJSON) parent.addElement(this)
+        if (parent is ArrayJSON) parent.addElement(this)
     }
 
-    val properties: LinkedHashMap<String, JSONELEMENT> = LinkedHashMap()
+    private val properties: LinkedHashMap<String, JsonElement> = LinkedHashMap()
+
+
+    fun getProperties() = properties.toMap()
+
 
     private fun auxToString(): String {
         return properties.map { "\"${it.key}\":${it.value}" }.joinToString(prefix = "{", postfix = "}")
@@ -42,7 +46,7 @@ class ObjectJSON(override val parent: CompositeJSON? = null) : CompositeJSON(par
 
     override fun toString(): String = auxToString()
 
-    fun addElement(name: String, element: JSONELEMENT) {
+    internal fun addElement(name: String, element: JsonElement) {
         properties[name] = element
     }
 
@@ -54,16 +58,17 @@ class ObjectJSON(override val parent: CompositeJSON? = null) : CompositeJSON(par
 
 }
 
-class ArrayJSON(override val parent: CompositeJSON? = null) : CompositeJSON(parent) {
+class ArrayJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
     constructor(parent: ObjectJSON, name: String) : this(parent) {
         parent.addElement(name, this)
     }
+
     init {
-        if(parent is ArrayJSON) parent.addElement(this)
+        if (parent is ArrayJSON) parent.addElement(this)
     }
 
-    val elements = mutableListOf<JSONELEMENT>()
-    fun addElement(element: JSONELEMENT) {
+    private val elements = mutableListOf<JsonElement>()
+    fun addElement(element: JsonElement) {
         elements.add(element)
     }
 
@@ -79,12 +84,10 @@ class ArrayJSON(override val parent: CompositeJSON? = null) : CompositeJSON(pare
 }
 
 
-
-class JSONString(val value: String, override val parent: CompositeJSON? = null) : JSONELEMENT {
+class JSONString(private val value: String, override val parent: CompositeJSON? = null) : JsonElement {
     constructor(value: String, parent: ObjectJSON, name: String) : this(value = value, parent = parent) {
         parent.addElement(name, this)
     }
-
     init {
         if (parent is ArrayJSON) parent.addElement(this)
     }
@@ -92,9 +95,11 @@ class JSONString(val value: String, override val parent: CompositeJSON? = null) 
     override fun toString(): String = "\"$value\""
 
     override fun accept(v: Visitor) = v.visit(this)
+
+    fun getValue() = value
 }
 
-class JSONNumber(val value: Number, override val parent: CompositeJSON? = null) : JSONELEMENT {
+class JSONNumber(private val value: Number, override val parent: CompositeJSON? = null) : JsonElement {
     constructor(value: Number, parent: ObjectJSON, name: String) : this(value = value, parent = parent) {
         parent.addElement(name, this)
     }
@@ -105,12 +110,15 @@ class JSONNumber(val value: Number, override val parent: CompositeJSON? = null) 
     override fun toString(): String = valueToString(value)
 
     override fun accept(v: Visitor) = v.visit(this)
+
+    fun getValue() = value
 }
 
-class JSONBoolean(val value: Boolean, override val parent: CompositeJSON? = null) : JSONELEMENT {
+class JSONBoolean(private val value: Boolean, override val parent: CompositeJSON? = null) : JsonElement {
     constructor(value: Boolean, parent: ObjectJSON, name: String) : this(value = value, parent = parent) {
         parent.addElement(name, this)
     }
+
     init {
         if (parent is ArrayJSON) parent.addElement(this)
     }
@@ -118,18 +126,26 @@ class JSONBoolean(val value: Boolean, override val parent: CompositeJSON? = null
     override fun toString(): String = valueToString(value)
 
     override fun accept(v: Visitor) = v.visit(this)
+
+    fun getValue() = value
 }
 
-class JSONNull(val value : Any? = null, override val parent: CompositeJSON? = null) : JSONELEMENT {
+class JSONNull(private val value: Any? = null, override val parent: CompositeJSON? = null) : JsonElement {
     constructor(parent: ObjectJSON, name: String) : this(parent = parent) {
         parent.addElement(name, this)
     }
+
     init {
         if (parent is ArrayJSON) parent.addElement(this)
     }
+
     override fun toString(): String = valueToString(value)
 
     override fun accept(v: Visitor) = v.visit(this)
+
+    fun getValue() = value
 }
 
-fun valueToString(value: Any?): String = "$value"
+private fun valueToString(value: Any?): String = "$value"
+
+

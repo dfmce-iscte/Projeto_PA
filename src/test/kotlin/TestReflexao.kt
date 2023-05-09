@@ -1,11 +1,6 @@
 import java.lang.IllegalArgumentException
 import kotlin.reflect.KClass
-import kotlin.reflect.KClassifier
-import kotlin.reflect.KProperty
 import kotlin.reflect.full.declaredMemberProperties
-import kotlin.reflect.full.isSubclassOf
-import kotlin.reflect.full.primaryConstructor
-import kotlin.reflect.jvm.jvmName
 import kotlin.test.*
 
 data class Point(val x: Int, val y: Int) {
@@ -99,7 +94,7 @@ class TestReflexao {
     @Test
     fun testReflexao() {
         val zed = Color.BLUE
-        val clazz = zed::class
+        println(zed.toJSON())
 
     }
 
@@ -126,8 +121,10 @@ class TestReflexao {
     fun testReflexaoExcludeFromJson() {
         val obj = MixExclude("Mix")
         val json = obj.toJSON()
-        println(json)
-        assertEquals(json.properties["string"], null)
+        if (json is ObjectJSON) {
+            assertEquals(json.getProperties()["string"],null)
+        }
+
     }
 
     @Test
@@ -137,8 +134,10 @@ class TestReflexao {
 //        println(x.properties["nome"].)
         val obj = MixToJsonString("Mix")
         val json = obj.toJSON()
-        assertEquals(json.properties["decimal"]!!::class.simpleName,"JSONString")
-        println(json)
+        if (json is ObjectJSON) {
+            assertEquals(json.getProperties()["decimal"]!!::class.simpleName, "JSONString")
+            println(json)
+        }
     }
     //VER QUANDO A TAG ESTÁ PARA LISTAS OU HASHMAPS
 
@@ -146,17 +145,30 @@ class TestReflexao {
     fun testReflexaoChangeName() {
         val obj = MixChangeName("Mix")
         val json = obj.toJSON()
-        assertEquals(json.properties["decimal"], null)
-        assertTrue("fixe" in json.properties)
-        assertFalse("decimal" in json.properties)
-        println(json)
+        if (json is ObjectJSON) {
+            assertEquals(json.getProperties()["decimal"], null)
+            assertTrue("fixe" in json.getProperties())
+            assertFalse("decimal" in json.getProperties())
+            println(json)
+        }
 
     }
 
+
     @Test
-    fun `test if it toJSON() fails`() {
-        val i = 0
-        println(i.toJSON())
+    fun testToJSON() {
+        val myMap = mapOf(
+            "key1" to 1,
+            "key2" to 2,
+            "key3" to 3
+        )
+        val nullName = null
+        val i = 5
+        val json = i.toJSON()
+        val value = (json as JSONNumber).getValue()
+
+
+        println(myMap.toJSON())
     }
 
 

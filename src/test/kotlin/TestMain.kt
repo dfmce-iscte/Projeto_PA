@@ -5,6 +5,7 @@ class TestMain {
 
     val rootObject = ObjectJSON()
     val n = JSONNumber(1, rootObject, "number")
+    val t1=JSONBoolean(true, rootObject, "boolean")
     val testNum = ObjectJSON(rootObject, "teste")
     val numbers = JSONNumber( 5,testNum, "number")
     val array = ArrayJSON(rootObject, "array")

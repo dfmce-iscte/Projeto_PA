@@ -2,6 +2,21 @@ sealed interface JsonElement {
     val parent: CompositeJSON?
 
     fun accept(v: Visitor)
+
+    val depth : Int
+        get() = calculateDepth()
+
+
+    private fun calculateDepth(): Int {
+        tailrec fun aux(dir : JsonElement, currentDepth : Int) : Int {
+            return if (dir.parent != null) {
+                aux(dir.parent!!, currentDepth+1)
+            } else {
+                currentDepth
+            }
+        }
+        return aux(this, 0)
+    }
 }
 
 interface Visitor {
@@ -41,7 +56,7 @@ class ObjectJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
 
 
     private fun auxToString(): String {
-        return properties.map { "\"${it.key}\":${it.value}" }.joinToString(prefix = "{", postfix = "}")
+        return properties.map { "\n"+"\t".repeat(it.value.depth)+"\"${it.key}\":${it.value}" }.joinToString(prefix = "{", postfix = "\n"+"\t".repeat(this.depth)+"}")
     }
 
     override fun toString(): String = auxToString()
@@ -79,7 +94,7 @@ class ArrayJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
     }
 
     override fun toString(): String {
-        return "[${elements.joinToString { it.toString() }}]"
+        return "[${elements.joinToString { "\n"+"\t".repeat(it.depth)+it.toString() }}\n"+"\t".repeat(this.depth)+"]"
     }
 }
 

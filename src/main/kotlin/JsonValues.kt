@@ -1,17 +1,14 @@
-class JsonValues(vararg values: JsonElement):Iterable<JsonElement>{
+class JsonValues(private val values: JsonElement) {
 
-    private val data = values.toMutableSet()
     private val observers: MutableList<JsonElementSetObserver> = mutableListOf()
 
     fun addObserver(observer: JsonElementSetObserver) = observers.add(observer)
 
     fun removeObserver(observer: JsonElementSetObserver) = observers.remove(observer)
-    override fun iterator(): Iterator<JsonElement> {
-       return data.iterator()
-    }
-    override fun toString(): String {
-        return data.joinToString(separator = "    ") { it.toString() }
-    }
+//    override fun iterator(): Iterator<JsonElement> {
+//       return data.iterator()
+//    }
+    override fun toString(): String = "$values"
 
 }
 

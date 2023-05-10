@@ -1,3 +1,9 @@
+import com.sun.org.apache.xalan.internal.lib.ExsltStrings
+import java.awt.Dimension
+import java.awt.GridBagLayout
+import java.awt.GridLayout
+import java.awt.event.KeyAdapter
+import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.*
@@ -36,6 +42,19 @@ class PanelView(private val parent : PanelView? = null, first : Boolean) : JPane
         observers.add(observer)
     }
 
+    inner class Keyboard(private val textField : JTextField, val action : (JTextField) -> Unit) : KeyAdapter(){
+        override fun keyPressed(e: KeyEvent?) {
+            if(e?.keyCode== KeyEvent.VK_ENTER){
+                action(textField)
+            }
+        }
+    }
+
+    fun addNewPanel() {
+        add(PanelView(first = true))
+        revalidate()
+        repaint()
+    }
 
     inner class MouseClick() : MouseAdapter() {
         override fun mouseClicked(e: MouseEvent?) {

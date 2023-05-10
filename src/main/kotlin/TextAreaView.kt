@@ -1,10 +1,10 @@
-import javax.swing.JLabel
-import javax.swing.JPanel
 import javax.swing.JTextArea
 
-class LabelView(private val model: JsonValues) : JTextArea() {
+class TextAreaView(private val model: JsonValues) : JTextArea() {
     init {
+        tabSize=2
         text = "$model"
+        isEditable = false
         model.addObserver(object : JsonElementSetObserver {
             override fun JsonElementAdded(value: JsonElement) {
                 text = "$model"

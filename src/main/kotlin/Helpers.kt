@@ -28,32 +28,24 @@ class Editor {
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         layout = GridLayout(0, 2)
         size = Dimension(600, 600)
+        setLocationRelativeTo(null)
 
-        val left = PanelView()
-        left.setSize(50, 50)
-        left.layout = GridLayout()
         val scrollPane=ScrollPane(model)
-        left.add(scrollPane)
+//        val left = PanelView()
+//        left.layout = GridLayout()
+//        scrollPane.add(left)
+////        val scrollPane1 = JScrollPane(testPanel()).apply {
+////            horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS
+////            verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_ALWAYS
+////        }
+////        left.add(scrollPane1)
 
-//        val scrollPane1 = JScrollPane(testPanel()).apply {
-//            horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS
-//            verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_ALWAYS
-//        }
-//        left.add(scrollPane1)
-
-        add(left)
+        add(scrollPane)
 
         val right = JPanel()
         right.layout = GridLayout()
-        val labelView=LabelView(model)
-        labelView.tabSize=2
-        right.add(labelView)
+        right.add(TextAreaView(model))
         add(right)
-//        val srcArea = JTextArea()
-//        srcArea.tabSize = 2
-//        srcArea.text = "TODO"
-//        right.add(srcArea)
-//        add(right)
     }
 
     fun open() {

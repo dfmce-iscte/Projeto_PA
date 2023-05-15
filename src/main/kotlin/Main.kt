@@ -36,6 +36,13 @@ sealed interface JsonElement {
         return aux(this, 0)
     }
 }
+interface JsonElementObserver {
+
+    fun elementAdded(children: JsonElement) {}
+
+    fun elementRemoved(children: JsonElement) {}
+    fun updateJSON() {}
+}
 
 interface Visitor {
     fun visit(c: ObjectJSON): Boolean = true
@@ -105,6 +112,7 @@ class ObjectJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
 }
 
 class ArrayJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
+    override val observers = mutableListOf<JsonElementObserver>()
     constructor(parent: ObjectJSON, name: String) : this(parent) {
         parent.addElement(name, this)
     }
@@ -137,7 +145,8 @@ class ArrayJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
 }
 
 
-class JSONString(private val value: String, override val parent: CompositeJSON? = null) : JsonElement {
+class JSONString(private var value: String, override val parent: CompositeJSON? = null) : JsonElement {
+    override val observers = mutableListOf<JsonElementObserver>()
     constructor(value: String, parent: ObjectJSON, name: String) : this(value = value, parent = parent) {
         parent.addElement(name, this)
     }
@@ -149,11 +158,17 @@ class JSONString(private val value: String, override val parent: CompositeJSON? 
 
     override fun accept(v: Visitor) = v.visit(this)
 
+    fun updateValue(newValue: String){
+        value=newValue
+        updateJSON()
+    }
+
     fun getValue() = value
     //alterar só para get()
 }
 
-class JSONNumber(private val value: Number, override val parent: CompositeJSON? = null) : JsonElement {
+class JSONNumber(private var value: Number, override val parent: CompositeJSON? = null) : JsonElement {
+    override val observers = mutableListOf<JsonElementObserver>()
     constructor(value: Number, parent: ObjectJSON, name: String) : this(value = value, parent = parent) {
         parent.addElement(name, this)
     }
@@ -165,10 +180,16 @@ class JSONNumber(private val value: Number, override val parent: CompositeJSON? 
 
     override fun accept(v: Visitor) = v.visit(this)
 
+    fun updateValue(newValue: Number) {
+        value=newValue
+        updateJSON()
+    }
+
     fun getValue() = value
 }
 
-class JSONBoolean(private val value: Boolean, override val parent: CompositeJSON? = null) : JsonElement {
+class JSONBoolean(private var value: Boolean, override val parent: CompositeJSON? = null) : JsonElement {
+    override val observers = mutableListOf<JsonElementObserver>()
     constructor(value: Boolean, parent: ObjectJSON, name: String) : this(value = value, parent = parent) {
         parent.addElement(name, this)
     }
@@ -181,10 +202,16 @@ class JSONBoolean(private val value: Boolean, override val parent: CompositeJSON
 
     override fun accept(v: Visitor) = v.visit(this)
 
+    fun updateValue(newValue: Boolean){
+        value=newValue
+        updateJSON()
+    }
+
     fun getValue() = value
 }
 
 class JSONNull(private val value: Any? = null, override val parent: CompositeJSON? = null) : JsonElement {
+    override val observers = mutableListOf<JsonElementObserver>()
     constructor(parent: ObjectJSON, name: String) : this(parent = parent) {
         parent.addElement(name, this)
     }

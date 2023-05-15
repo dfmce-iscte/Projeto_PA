@@ -1,4 +1,22 @@
 sealed interface JsonElement {
+    val observers : MutableList<JsonElementObserver>
+
+    fun addObserver(observer: JsonElementObserver) = observers.add(observer)
+
+    fun removeObserver(observer: JsonElementObserver) = observers.remove(observer)
+
+    fun updateJSON () {
+        observers.forEach { it.updateJSON() }
+    }
+
+    fun informElementAdded(children: JsonElement) {
+        observers.forEach { it.elementAdded(children) }
+    }
+
+    fun informElementRemoved(children: JsonElement) {
+        observers.forEach { it.elementRemoved(children) }
+    }
+
     val parent: CompositeJSON?
 
     fun accept(v: Visitor)
@@ -38,9 +56,12 @@ sealed interface CompositeJSON : JsonElement {
 
     override fun toString(): String
 
+    fun removeChildren(children : JsonElement)
+
 }
 
 class ObjectJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
+    override val observers = mutableListOf<JsonElementObserver>()
     constructor(parent: ObjectJSON, name: String) : this(parent) {
         parent.addElement(name, this)
     }
@@ -63,6 +84,7 @@ class ObjectJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
 
     internal fun addElement(name: String, element: JsonElement) {
         properties[name] = element
+        informElementAdded(element)
     }
 
     override fun accept(v: Visitor) {
@@ -70,6 +92,15 @@ class ObjectJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
             properties.forEach { it.value.accept(v) }
         v.endVisit(this)
     }
+
+    override fun removeChildren(children: JsonElement) {
+        properties.forEach{
+            if (it.value === children) properties.remove(it.key) //comprar pelas instancias e nao pelo value
+        }
+        informElementRemoved(children)
+    }
+
+
 
 }
 
@@ -85,6 +116,7 @@ class ArrayJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
     private val elements = mutableListOf<JsonElement>()
     fun addElement(element: JsonElement) {
         elements.add(element)
+        informElementAdded(element)
     }
 
     override fun accept(v: Visitor) {
@@ -96,6 +128,12 @@ class ArrayJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
     override fun toString(): String {
         return "[${elements.joinToString { "\n"+"\t".repeat(it.depth)+it.toString() }}\n"+"\t".repeat(this.depth)+"]"
     }
+
+    override fun removeChildren(children: JsonElement) {
+        elements.remove(children)
+        informElementRemoved(children)
+    }
+
 }
 
 
@@ -112,6 +150,7 @@ class JSONString(private val value: String, override val parent: CompositeJSON? 
     override fun accept(v: Visitor) = v.visit(this)
 
     fun getValue() = value
+    //alterar só para get()
 }
 
 class JSONNumber(private val value: Number, override val parent: CompositeJSON? = null) : JsonElement {

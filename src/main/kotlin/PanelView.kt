@@ -1,4 +1,3 @@
-import com.sun.org.apache.xalan.internal.lib.ExsltStrings
 import java.awt.Dimension
 import java.awt.GridBagLayout
 import java.awt.GridLayout
@@ -9,37 +8,44 @@ import java.awt.event.MouseEvent
 import javax.swing.*
 
 interface PanelViewObserver {
-    fun panelAdded() {}
+    fun panelAdded(text : String, parent: CompositeJSON, name : String? = null) : JsonElement
 
-    fun panelRemoved(panel : PanelView) {}
+    fun panelRemoved(parent: CompositeJSON, children : JsonElement) {}
 }
 
-class PanelView(private val parent : PanelView? = null, first : Boolean) : JPanel(){
+class PanelView(private val objectParent : CompositeJSON, first : Boolean) : JPanel(){
 
     private val observers : MutableList<PanelViewObserver> = mutableListOf()
+    private var jsonElement : JsonElement? = null
+
+    val getJsonElement : JsonElement?
+        get() = jsonElement
+    fun addObserver(observer: PanelViewObserver) {
+        observers.add(observer)
+    }
+
+    fun removeObserver(observer: PanelViewObserver) {
+        observers.remove(observer)
+    }
+
+
 
     init {
         layout = GridLayout(0,1)
 
-        if (first) add(Property())
+        add(Property())
 
-        addMouseListener(MouseClick())
-        parent?.addChildren(object : PanelViewObserver {
-            override fun panelRemoved(panel : PanelView) {
-                remove(panel)
+        objectParent.addObserver(object : JsonElementObserver {
+            override fun elementAdded(children: JsonElement) {
+//                add()
+            }
+
+            override fun elementRemoved(children: JsonElement) {
+
             }
         })
-    }
 
-    private fun createJsonElement(text: JTextField, name: String) {
-//        if (text.text.toIntOrNull() != null) {
-//
-//        }
-
-    }
-
-    private fun addChildren(observer: PanelViewObserver) {
-        observers.add(observer)
+        addMouseListener(MouseClick({ addNewProperty() }, { addNewProperty()}))
     }
 
     inner class Keyboard(private val textField : JTextField, val action : (JTextField) -> Unit) : KeyAdapter(){
@@ -50,13 +56,19 @@ class PanelView(private val parent : PanelView? = null, first : Boolean) : JPane
         }
     }
 
-    fun addNewPanel() {
-        add(PanelView(first = true))
+    private fun removeProperty() {
+        remove(this)
         revalidate()
         repaint()
     }
 
-    inner class MouseClick() : MouseAdapter() {
+    private fun addNewProperty() {
+        add(Property())
+        revalidate()
+        repaint()
+    }
+
+    inner class MouseClick(val addAction : () -> Unit, val deleteAction: () -> Unit) : MouseAdapter() {
         override fun mouseClicked(e: MouseEvent?) {
             if (e?.button == MouseEvent.BUTTON3) {
                 println("Right button")
@@ -70,13 +82,12 @@ class PanelView(private val parent : PanelView? = null, first : Boolean) : JPane
                     val addButton = JButton("add")
                     addButton.addActionListener {
                         dispose()
-                        addNewPanel()
+                        addAction()
                     }
                     val deleteButton = JButton("delete")
                     deleteButton.addActionListener {
-//                        observers.forEach {
-//                            it.panelRemoved(this@PanelView)
-//                        }
+                        dispose()
+                        deleteAction()
                     }
                     add(addButton)
                     add(deleteButton)
@@ -89,6 +100,7 @@ class PanelView(private val parent : PanelView? = null, first : Boolean) : JPane
 
 
     inner class Property : JComponent() {
+        private var textField : JTextField? = null
         init {
             layout = GridLayout(0,1)
             border=BorderFactory.createRaisedBevelBorder()
@@ -96,25 +108,33 @@ class PanelView(private val parent : PanelView? = null, first : Boolean) : JPane
             text.addKeyListener(Keyboard(text) {
                 removeInitialTextFieldAndAddLabelAndTextField(text)
             })
-
             add(text)
+
         }
 
         private fun removeInitialTextFieldAndAddLabelAndTextField(text : JTextField) {
-            if (text.text.contains(":")) {
-                val panel = PanelView(first = false).apply { layout = GridLayout(0,2) }
-                val label = JLabel(text.text)
-                remove(text)
-                panel.add(label)
-                val textField = JTextField()
-                panel.add(textField)
-                add(panel)
+            if (text.text.contains(":") && objectParent !is ObjectJSON) { /*dar erro*/}
+            else if (text.text.contains(":")) {
+                removeAll()
+                layout = GridLayout(0, 2)
+                textField = JTextField()
+                add(JLabel(text.text))
+                add(textField)
                 revalidate()
                 repaint()
-                textField.addKeyListener(Keyboard(textField) {
-                    createJsonElement(textField,text.text)
+                textField?.addKeyListener(Keyboard(textField!!) {
+                    observers.forEach {
+                        it.panelAdded(textField!!.text, objectParent, text.text.split(":")[0])
+                    }
+                    // transformar em checkbox, ou em lista, ....
                 })
             }
         }
-    }
+
+        private fun deleteProperty() {
+            remove(this)
+//            observers.forEach { it.panelRemoved() }
+        }
+
+     }
 }

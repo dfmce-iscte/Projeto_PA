@@ -5,16 +5,19 @@ class TextAreaView(private val model: JsonValues) : JTextArea() {
         tabSize=2
         text = "$model"
         isEditable = false
-        model.addObserver(object : JsonElementSetObserver {
-            override fun JsonElementAdded(value: JsonElement) {
-                text = "$model"
-            }
-
-            override fun JsonElementReplaced(valueOld: JsonElement, valueNew: JsonElement) {
-                text = "$model"
-            }
-
-            override fun JsonElementRemoved(value: JsonElement) {
+        model.addObserver(object : JsonElementObserver {
+//            override fun jsonElementAdded(value: JsonElement) {
+//                text = "$model"
+//            }
+//
+//            override fun jsonElementReplaced(valueOld: JsonElement, valueNew: JsonElement) {
+//                text = "$model"
+//            }
+//
+//            override fun jsonElementRemoved(value: JsonElement) {
+//                text = "$model"
+//            }
+            override fun updateJSON() {
                 text = "$model"
             }
         }

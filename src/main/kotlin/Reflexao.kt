@@ -113,16 +113,31 @@ private fun createObjectJSON(parent: CompositeJSON? = null, name: String? = null
         else -> ObjectJSON()
     }
 
-fun Any.toJSON(): JsonElement {
-    return when (this) {
-        is String -> JSONString(value = this)
-        is Char -> JSONString(value = this.toString())
-        is Boolean -> JSONBoolean(value = this)
-        is Number -> JSONNumber(value = this)
-        is Enum<*> -> JSONString(value = this.toString())
-        is Collection<*> -> convertIterableToArrayJSON(this)
-        is Map<*, *> -> convertMapToObjectJSON(this)
-        else -> toJSONObject(this)
+fun Any.toJSON(parent : CompositeJSON? = null, name : String? = null): JsonElement {
+    if (parent is ObjectJSON && name == null)
+        throw IllegalArgumentException("The name of the object must be informed when the parent is a ObjectJSON.")
+    return if (parent is ObjectJSON && name != null) {
+        when (this) {
+            is String -> JSONString(value = this, parent = parent, name = name)
+            is Char -> JSONString(value = this.toString(), parent = parent, name = name)
+            is Boolean -> JSONBoolean(value = this, parent = parent, name = name)
+            is Number -> JSONNumber(value = this, parent = parent, name = name)
+            is Enum<*> -> JSONString(value = this.toString(), parent = parent, name = name)
+            is Collection<*> -> convertIterableToArrayJSON(this, arrayParent = parent, arrayName = name)
+            is Map<*, *> -> convertMapToObjectJSON(this, mapParent = parent, mapName = name)
+            else -> toJSONObject(this, name = name)
+        }
+    } else {
+        when (this) {
+            is String -> JSONString(value = this, parent = parent)
+            is Char -> JSONString(value = this.toString(), parent = parent)
+            is Boolean -> JSONBoolean(value = this, parent = parent)
+            is Number -> JSONNumber(value = this, parent = parent)
+            is Enum<*> -> JSONString(value = this.toString(), parent = parent)
+            is Collection<*> -> convertIterableToArrayJSON(this)
+            is Map<*, *> -> convertMapToObjectJSON(this)
+            else -> toJSONObject(this)
+        }
     }
 
 }

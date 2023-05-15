@@ -8,7 +8,7 @@ import javax.swing.*
 class ScrollPane(private val model: JsonValues) : JScrollPane() {
 
     init {
-        addMouseListener(MouseClick())
+//        addMouseListener(MouseClick())
         viewport.add(
             JPanel().apply {
                 horizontalScrollBarPolicy = HORIZONTAL_SCROLLBAR_ALWAYS
@@ -16,35 +16,35 @@ class ScrollPane(private val model: JsonValues) : JScrollPane() {
             })
     }
 
-    fun addNewPanel() {
-        val newPanel = PanelView(first = true)
-        setViewportView(newPanel)
-        revalidate()
-        repaint()
-    }
+//    fun addNewPanel() {
+//        val newPanel = PanelView(first = true)
+//        setViewportView(newPanel)
+//        revalidate()
+//        repaint()
+//    }
 
-    inner class MouseClick() : MouseAdapter() {
-        override fun mouseClicked(e: MouseEvent?) {
-            if (e?.button == MouseEvent.BUTTON3) {
-
-                val frame = JFrame("Add new element").apply {
-                    defaultCloseOperation = JFrame.DISPOSE_ON_CLOSE
-                    layout = GridBagLayout()
-                    size = Dimension(400, 100)
-                    setLocationRelativeTo(null)
-
-                    val addButton = JButton("add")
-                    addButton.addActionListener {
-                            dispose()
-                            addNewPanel()
-                        }
-                        add(addButton)
-                    }
-                    frame.isVisible = true
-                }
-            }
-        }
-
+//    inner class MouseClick() : MouseAdapter() {
+//        override fun mouseClicked(e: MouseEvent?) {
+//            if (e?.button == MouseEvent.BUTTON3) {
+//
+//                val frame = JFrame("Add new element").apply {
+//                    defaultCloseOperation = JFrame.DISPOSE_ON_CLOSE
+//                    layout = GridBagLayout()
+//                    size = Dimension(400, 100)
+//                    setLocationRelativeTo(null)
+//
+//                    val addButton = JButton("add")
+//                    addButton.addActionListener {
+//                            dispose()
+//                            addNewPanel()
+//                        }
+//                        add(addButton)
+//                    }
+//                    frame.isVisible = true
+//                }
+//            }
+//        }
+//
 
 
 //    fun testPanel(): JPanel =

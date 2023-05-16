@@ -9,19 +9,21 @@ import javax.swing.*
 fun main() {
     Editor().open()
 }
-//data class Mix(val name: String = "") {
-//    val list = arrayListOf(1, 2, 3, 4)
+data class Point(val x: Int, val y: Int)
+data class Mix(val name: String = "") {
+    val list = arrayListOf(1, 2, 3, 4)
 //    val listChar = arrayListOf('c', 'f', 'g')
-//    val nullProperty = null
-//    val number = 0
-//    val decimal = 15.56
+    val number = 0
+    val decimal = 15.56
 //    val char = 'c'
 //    val string = "STRING"
-//    val bool = true
+//    val nullProperty = null
+    val point = Point(1, 2)
+    val bool = true
 //    val hasMap = hashMapOf("foo" to 1, "bar" to 2)
 //    var set = setOf(1, 2, 3, 2, 1)
-//
-//}
+
+}
 
 /*
 * Se passarmos um object class do Mix, e dps dá-se run, tem de ter os paneis logo criados
@@ -29,7 +31,8 @@ fun main() {
 * */
 
 class Editor {
-    val model = ObjectJSON()
+//    val model = ObjectJSON()
+    val model = (Mix("ze").toJSON() as CompositeJSON)
     val frame = JFrame("JSON Object Editor").apply {
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         layout = GridLayout(0, 2)
@@ -41,7 +44,7 @@ class Editor {
                     verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_ALWAYS
                 }
 
-        val panel = PanelView(objectParent = model, first = true)
+        val panel = PanelView(compJson = model)
         panel.addObserver(object : PanelViewObserver {
             override fun panelAdded(text: String, parent: CompositeJSON, name : String?): JsonElement {
                 //convert text to right object type e dps toJSON

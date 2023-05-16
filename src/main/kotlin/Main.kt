@@ -122,6 +122,10 @@ class ArrayJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
     }
 
     private val elements = mutableListOf<JsonElement>()
+
+    val getElements : MutableList<JsonElement>
+        get() = elements
+
     fun addElement(element: JsonElement) {
         elements.add(element)
         informElementAdded(element)

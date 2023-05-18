@@ -95,6 +95,42 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
         repaint()
     }
 
+    private fun addNewPropertyArray() {
+        add(PropertyArray())
+        revalidate()
+        repaint()
+    }
+
+    inner class MouseClickArray(val addAction: () -> Unit, val deleteAction: () -> Unit) : MouseAdapter() {
+        override fun mouseClicked(e: MouseEvent?) {
+            println("PICHAAAAA")
+            if (e?.button == MouseEvent.BUTTON3) {
+                println("Right button")
+                val frame = JFrame("Add new element").apply {
+                    defaultCloseOperation = JFrame.DISPOSE_ON_CLOSE
+                    layout = GridBagLayout()
+                    size = Dimension(400, 100)
+                    setLocationRelativeTo(null)
+
+                    val addButton = JButton("add")
+                    addButton.addActionListener {
+                        dispose()
+                        addAction()
+                    }
+                    val deleteButton = JButton("delete")
+                    deleteButton.addActionListener {
+                        dispose()
+                        deleteAction()
+                    }
+                    add(addButton)
+                    add(deleteButton)
+                }
+                frame.isVisible = true
+            }
+
+        }
+    }
+
     inner class MouseClick(val addAction: () -> Unit, val deleteAction: () -> Unit) : MouseAdapter() {
         override fun mouseClicked(e: MouseEvent?) {
             if (e?.button == MouseEvent.BUTTON3) {
@@ -138,6 +174,17 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
                 }
                 add(area)
             }
+        }
+    }
+
+    inner class PropertyArray : JComponent() {
+
+        init {
+            layout = GridLayout(0, 1)
+            border = BorderFactory.createRaisedBevelBorder()
+            val text = JTextField()
+            add(text)
+
         }
     }
 

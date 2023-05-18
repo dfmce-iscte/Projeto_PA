@@ -12,19 +12,15 @@ class TextAreaView() : JComponent() {
         val type = checkType(value)
         //println(type)
         return if (type is Boolean) {
-            val box = JCheckBox().apply { if (type) isSelected = true}
+            val box = JCheckBox().apply { if (type) isSelected = value.toBoolean()}
 
-            box.addItemListener(object  :ItemListener{
-                override fun itemStateChanged(e: ItemEvent?) {
-                    if (e?.stateChange == ItemEvent.SELECTED) {
-                        box.isSelected=false
-                        // Do something when the checkbox is checked
-                    } else if (e?.stateChange == ItemEvent.DESELECTED) {
-                        box.isSelected=true
+            box.addItemListener { e ->
+                if (e?.stateChange == ItemEvent.SELECTED) {
+                } else if (e?.stateChange == ItemEvent.DESELECTED) {
 
-                    }
+
                 }
-            })
+            }
             return box
         } else {
             JTextField(value)

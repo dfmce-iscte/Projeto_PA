@@ -47,7 +47,7 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
             else {
                 val area = TextAreaView().getComponent(it.toString())
                 if (area is JTextField) {
-                    area.addKeyListener(Keyboard(area) { text, _, _ -> informObserversAdded(text, it) })
+                    area.addKeyListener(Keyboard(area) { text, _, _ -> informObserversAdded(text, compJson) })
                     area.addMouseListener(MouseClickArray({addNewPropertyArray()},{addNewPropertyArray()}))
                 }
                 add(TextAreaView().getComponent(it.toString()))
@@ -56,7 +56,7 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
         }
     }
 
-    private fun informObserversAdded(text: String, json: JsonElement, name: String? = null) {
+    private fun informObserversAdded(text: String, parent: CompositeJSON, name: String? = null) {
         println("New value: $text")
         observers.forEach { it.panelAdded(text, parent, name) }
     }

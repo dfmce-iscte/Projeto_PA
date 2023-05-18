@@ -35,6 +35,7 @@ sealed interface JsonElement {
         }
         return aux(this, 0)
     }
+
 }
 interface JsonElementObserver {
 
@@ -82,6 +83,12 @@ class ObjectJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
 
     fun getProperties() = properties.toMap()
 
+    fun getKey(value: JsonElement):String {
+        properties.forEach{
+            if (it.value === value) return it.key
+        }
+        return ""
+    }
 
     private fun auxToString(): String {
         return properties.map { "\n"+"\t".repeat(it.value.depth)+"\"${it.key}\":${it.value}" }.joinToString(prefix = "{", postfix = "\n"+"\t".repeat(this.depth)+"}")
@@ -90,6 +97,8 @@ class ObjectJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
     override fun toString(): String = auxToString()
 
     internal fun addElement(name: String, element: JsonElement) {
+//        observers.forEach { element.addObserver(it) }
+        println("Name: $name Element: $element")
         properties[name] = element
         informElementAdded(element)
     }
@@ -127,6 +136,8 @@ class ArrayJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
         get() = elements
 
     fun addElement(element: JsonElement) {
+        println("Adding element to array")
+//        observers.forEach { element.addObserver(it) }
         elements.add(element)
         informElementAdded(element)
     }
@@ -145,6 +156,29 @@ class ArrayJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
         elements.remove(children)
         informElementRemoved(children)
     }
+
+    fun updateChildren(children: JsonElement, value: Any?){
+        println("Value is String ${value is String}")
+        println("Children $children")
+        val newValue = when(value){
+            is String -> JSONString(value, this)
+            is Number -> JSONNumber(value, this)
+            is Boolean -> JSONBoolean(value, this)
+            else -> JSONNull(this)
+        }
+        elements.forEach{
+            if (it === children)  {
+                val index = elements.indexOf(it)
+                println(elements[index])
+                elements[index] = newValue
+                println(elements[index])
+            }
+        }
+        elements.removeAt(elements.size - 1)
+        updateJSON()
+    }
+
+    fun getChildren(index:Int) = elements[index]
 
 }
 

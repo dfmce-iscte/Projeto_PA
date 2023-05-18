@@ -12,10 +12,10 @@ fun main() {
 data class Point(val x: Int, val y: Int)
 data class Mix(val name: String = "") {
     val list = arrayListOf(1, 2, 3, 4)
-//    val listChar = arrayListOf('c', 'f', 'g')
+    //    val listChar = arrayListOf('c', 'f', 'g')
     val number = 0
     val decimal = 15.56
-//    val char = 'c'
+    //    val char = 'c'
 //    val string = "STRING"
 //    val nullProperty = null
     val point = Point(1, 2)
@@ -40,7 +40,7 @@ data class Mix(val name: String = "") {
  */
 
 class Editor {
-//    val model = ObjectJSON()
+    //    val model = ObjectJSON()
     val model = (Mix("ze").toJSON() as CompositeJSON)
     val frame = JFrame("JSON Object Editor").apply {
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
@@ -49,9 +49,9 @@ class Editor {
         setLocationRelativeTo(null)
 
         val scrollPane= JScrollPane().apply {
-                    horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS
-                    verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_ALWAYS
-                }
+            horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS
+            verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_ALWAYS
+        }
 
         val panel = PanelView(compJson = model)
         panel.addObserver(object : PanelViewObserver {
@@ -62,6 +62,18 @@ class Editor {
             override fun panelRemoved(parent: CompositeJSON, children : JsonElement) {
                 parent.removeChildren(children)
                 //falta ver onde se remove o panel. Aqui ou na classe PanelView
+                model.updateJSON()
+            }
+            override fun panelUpdated(text: String, json: JsonElement, name: String?) {
+                val newValue = checkType(text)
+                if (json.parent is ArrayJSON) {
+                    println("New value: $newValue")
+                    (json.parent as ArrayJSON).updateChildren(json, newValue)
+                } else if (json is ObjectJSON){
+                    println("New object value: $newValue")
+                    println(name)
+                    newValue?.toJSON(parent = json, name = name)
+                }
                 model.updateJSON()
             }
         })
@@ -98,18 +110,18 @@ class Editor {
         frame.isVisible = true
     }
 
-    fun checkType(text: String): Any? {
-        return when {
-            text.toIntOrNull() != null -> text.toInt()
-            text.toDoubleOrNull() != null -> text.toDouble()
-            text.toFloatOrNull() != null -> text.toFloat()
-            text.toLongOrNull() != null -> text.toLong()
-            text.equals("true", ignoreCase = true) -> true
-            text.equals("false", ignoreCase = true) -> false
-            text.isEmpty() -> null
-            else -> text
-        }
-    }
+//    fun checkType(text: String): Any? {
+//        return when {
+//            text.toIntOrNull() != null -> text.toInt()
+//            text.toDoubleOrNull() != null -> text.toDouble()
+//            text.toFloatOrNull() != null -> text.toFloat()
+//            text.toLongOrNull() != null -> text.toLong()
+//            text.equals("true", ignoreCase = true) -> true
+//            text.equals("false", ignoreCase = true) -> false
+//            text.isEmpty() -> null
+//            else -> text
+//        }
+//    }
 
     fun testPanel(): JPanel =
         JPanel().apply {

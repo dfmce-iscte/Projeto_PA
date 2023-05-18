@@ -30,6 +30,15 @@ data class Mix(val name: String = "") {
 * Os panels reagem ao modelo.J
 * */
 
+/*
+    Fazer botão delete
+    Criar botão para criar objeto
+    Adiconar novos elementos a arrays
+    Corrigir checkbox
+    Atualizar valores dos arrays
+
+ */
+
 class Editor {
 //    val model = ObjectJSON()
     val model = (Mix("ze").toJSON() as CompositeJSON)

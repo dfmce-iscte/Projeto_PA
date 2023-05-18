@@ -32,38 +32,53 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
             (compJson is ArrayJSON && compJson.getElements.isEmpty())) {
             add(Property())
         } else if (compJson is ArrayJSON) {
-            compJson.getElements.forEach { it ->
-                if (it is CompositeJSON) add(PanelView(it))
-                else {
-                    val area = TextAreaView().getComponent(it.toString())
-                    if (area is JTextField) {
-                        area.addKeyListener(Keyboard(area) { informObserversAdded(area.text, compJson) })
-                        println("Array Textfield")
-                    }
-                    add(TextAreaView().getComponent(it.toString()))
-                }
-            }
+            compJsonIsArray(compJson)
         } else if (compJson is ObjectJSON) {
-            println("Is objectJson")
             compJson.getProperties().forEach{
                 add(ObjectProperty(it.key, it.value))
             }
         }
-
-
-        addMouseListener(MouseClick({ addNewProperty() }, { addNewProperty() }))
+        addMouseListener(MouseClick({ addNewProperty() }, { removeProperty() }))
     }
 
-    private fun informObserversAdded(text: String, parent: CompositeJSON, name: String? = null) {
+    private fun compJsonIsArray(json : ArrayJSON) {
+        json.getElements.forEach { it ->
+            if (it is CompositeJSON) add(PanelView(it))
+            else {
+                val area = TextAreaView().getComponent(it.toString())
+                if (area is JTextField) {
+                    area.addKeyListener(Keyboard(area) { text, _, _ -> informObserversAdded(text, it) })
+                    area.addMouseListener(MouseClickArray({addNewPropertyArray()},{addNewPropertyArray()}))
+                }
+                add(TextAreaView().getComponent(it.toString()))
+
+            }
+        }
+    }
+
+    private fun informObserversAdded(text: String, json: JsonElement, name: String? = null) {
         println("New value: $text")
         observers.forEach { it.panelAdded(text, parent, name) }
     }
 
-    inner class Keyboard(private val textField: JComponent, val action: (JComponent) -> Unit) : KeyAdapter() {
+    inner class Keyboard(private val jTextField: JTextField, val action: (text : String, json : CompositeJSON, name : String?) -> Unit) : KeyAdapter() {
+        init {
+            println("Keyboard init")
+        }
+        override fun keyPressed(e: KeyEvent?) {
+//            println("Key pressed")
+            if (e?.keyCode == KeyEvent.VK_ENTER) {
+                println("Enter pressed")
+                action(jTextField.text, compJson, null)
+            }
+        }
+    }
+
+    inner class OtherKeyboard(private val jTextField: JTextField, val action : (JTextField) -> Unit): KeyAdapter() {
         override fun keyPressed(e: KeyEvent?) {
             println("Key pressed")
             if (e?.keyCode == KeyEvent.VK_ENTER) {
-                action(textField)
+                action(jTextField)
             }
         }
     }
@@ -119,7 +134,7 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
             else  {
                 val area = TextAreaView().getComponent(value.toString())
                 if (area is JTextField) {
-                    area.addKeyListener(Keyboard(area)  { informObserversAdded(area.text, compJson, key) })
+                    area.addKeyListener(Keyboard(area)  { text, json, name ->  informObserversAdded(area.text, compJson, key) })
                 }
                 add(area)
             }
@@ -134,7 +149,7 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
             layout = GridLayout(0, 1)
             border = BorderFactory.createRaisedBevelBorder()
             val text = JTextField()
-            text.addKeyListener(Keyboard(text) {
+            text.addKeyListener(OtherKeyboard(text) {
                 removeInitialTextFieldAndAddLabelAndTextField(text)
             })
             add(text)
@@ -152,7 +167,7 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
                 add(textField)
                 revalidate()
                 repaint()
-                textField?.addKeyListener(Keyboard(textField!!) {
+                textField?.addKeyListener(OtherKeyboard((textField as JTextField)) {
                     if (textField is JTextField) {
                         val valueTextField = (textField as JTextField).text
                         val newtextField = TextAreaView().getComponent(valueTextField)

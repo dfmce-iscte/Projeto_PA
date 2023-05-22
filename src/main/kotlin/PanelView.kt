@@ -1,11 +1,9 @@
-import java.awt.Dimension
-import java.awt.GridBagLayout
-import java.awt.GridLayout
+import java.awt.*
 import java.awt.event.*
 import javax.swing.*
 
 interface PanelViewObserver {
-    fun elementAdded(text: String, parent: CompositeJSON, name: String? = null): JsonElement
+    fun elementAdded(text: String, panelView: PanelView, indexToReplace : Int, parent: CompositeJSON, name: String? = null)
 
     fun elementUpdated(text: String, json: JsonElement, name: String? = null)
 
@@ -13,7 +11,7 @@ interface PanelViewObserver {
 }
 
 interface UpdatedAction {
-    fun invoke(text: String, index: Int? = null, json: JsonElement? = null, name: String? = null)
+    fun invoke(text: String) {}
 
 }
 class PanelView(private val compJson: CompositeJSON) : JPanel() {
@@ -37,7 +35,7 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
         layout = GridLayout(0, 1)
         if ((compJson is ObjectJSON && compJson.getProperties().isEmpty()) ||
             (compJson is ArrayJSON && compJson.getElements.isEmpty())) {
-            add(Property())
+            add(NewProperty())
         } else if (compJson is ArrayJSON) {
             compJsonIsArray(compJson)
         } else if (compJson is ObjectJSON) {
@@ -48,6 +46,14 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
         addMouseListener(MouseClick({ addNewProperty() }, { removeProperty() }))
     }
 
+    fun replaceComponent(indexToReplace: Int, json: JsonElement, key: String? = null) {
+        remove(indexToReplace)
+        if (key != null)
+            add(ObjectProperty(key,json), indexToReplace)
+        else
+            add(getComponentArray(json.toString().replace("\"", ""), indexToReplace), indexToReplace)
+    }
+
     private fun compJsonIsArray(json : ArrayJSON) {
         json.getElements.forEach { it ->
             if (it is CompositeJSON) {
@@ -56,7 +62,7 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
                 add(PanelView(it))
             }
             else {
-                val area = getComponentArray(value = it.toString(), json.getElements.indexOf(it))
+                val area = getComponentArray(value = it.toString().replace("\"", ""), json.getElements.indexOf(it))
                 add(area)
             }
         }
@@ -71,23 +77,14 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
         }
     }
 
-    private fun informObserversAdded(text: String, parent: CompositeJSON, name: String? = null) {
-        observers.forEach { it.elementAdded(text, parent, name) }
+    private fun informObserversAdded(text: String, panelView: PanelView, indexToReplace : Int, parent: CompositeJSON, key: String? = null) {
+        observers.forEach { it.elementAdded(text, panelView, indexToReplace, parent, key) }
     }
 
     inner class Keyboard(private val jTextField: JTextField, private val action : UpdatedAction) : KeyAdapter() {
         override fun keyPressed(e: KeyEvent?) {
             if (e?.keyCode == KeyEvent.VK_ENTER) {
                 action.invoke(jTextField.text)
-            }
-        }
-    }
-
-    inner class OtherKeyboard(private val jTextField: JTextField, val action : (JTextField) -> Unit): KeyAdapter() {
-        override fun keyPressed(e: KeyEvent?) {
-            println("Key pressed")
-            if (e?.keyCode == KeyEvent.VK_ENTER) {
-                action(jTextField)
             }
         }
     }
@@ -99,45 +96,22 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
     }
 
     private fun addNewProperty() {
-        add(Property())
+        add(NewProperty())
         revalidate()
         repaint()
     }
 
     private fun addNewPropertyArray() {
-        add(PropertyArray())
+        val field = JTextField()
+        field.addKeyListener(Keyboard(field, object : UpdatedAction {
+            override fun invoke(text: String) {
+                informObserversAdded(field.text, this@PanelView, components.indexOf(field), compJson)
+            }
+        }))
+        add(field)
         revalidate()
         repaint()
     }
-
-//    inner class MouseClickArray(val addAction: () -> Unit, val deleteAction: () -> Unit) : MouseAdapter() {
-//        override fun mouseClicked(e: MouseEvent?) {
-//            if (e?.button == MouseEvent.BUTTON3) {
-//                println("Right button")
-//                val frame = JFrame("Add new element").apply {
-//                    defaultCloseOperation = JFrame.DISPOSE_ON_CLOSE
-//                    layout = GridBagLayout()
-//                    size = Dimension(400, 100)
-//                    setLocationRelativeTo(null)
-//
-//                    val addButton = JButton("add")
-//                    addButton.addActionListener {
-//                        dispose()
-//                        addAction()
-//                    }
-//                    val deleteButton = JButton("delete")
-//                    deleteButton.addActionListener {
-//                        dispose()
-//                        deleteAction()
-//                    }
-//                    add(addButton)
-//                    add(deleteButton)
-//                }
-//                frame.isVisible = true
-//            }
-//
-//        }
-//    }
 
     inner class MouseClick(val addAction: () -> Unit, val deleteAction: () -> Unit) : MouseAdapter() {
         override fun mouseClicked(e: MouseEvent?) {
@@ -181,77 +155,48 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
                 add(panel)
             }
             else  {
-                val area = getComponent(value = value.toString(), key = key)
+                val area = getComponent(value = value.toString().replace("\"", ""), key = key)
                 add(area)
             }
         }
     }
 
-    inner class PropertyArray : JComponent() {
-
-//        init {
-//            layout = GridLayout(0, 1)
-//            val text = JTextField()
-//            text.addMouseListener(MouseClickArray({ addNewPropertyArray() }, { addNewPropertyArray() }))
-//            text.addKeyListener(Keyboard(text) { text, _, name -> informObserversAdded(text, compJson, name) })
-//            add(text)
-//        }
-    }
-
-
-    inner class Property : JComponent() {
-        private var textField: JComponent? = null
-
+    inner class NewProperty : JComponent() {
         init {
             layout = GridLayout(0, 1)
             border = BorderFactory.createRaisedBevelBorder()
-            val text = JTextField()
-            text.addKeyListener(OtherKeyboard(text) {
-                removeInitialTextFieldAndAddLabelAndTextField(text)
-            })
-            add(text)
-
+            val textField = JTextField()
+            textField.addKeyListener(Keyboard(textField, object : UpdatedAction {
+                override fun invoke(text: String) {
+                    removeInitialTextFieldAndAddLabelAndTextField(textField)
+                }
+            }))
+            add(textField)
         }
 
-        //melhorar este função
-        private fun removeInitialTextFieldAndAddLabelAndTextField(text: JTextField) {
-            if (text.text.contains(":") && compJson !is ObjectJSON) {
-                /*dar erro*/
-            } else if (text.text.contains(":")) {
+        private fun removeInitialTextFieldAndAddLabelAndTextField(labelText: JTextField) {
+            if (!(labelText.text.contains(":") && compJson !is ObjectJSON)) {
                 removeAll()
                 layout = GridLayout(0, 2)
-                textField = JTextField()
-                add(JLabel(text.text))
+                val textField = JTextField()
+                add(JLabel(labelText.text))
                 add(textField)
                 revalidate()
                 repaint()
-                textField?.addKeyListener(OtherKeyboard((textField as JTextField)) {
-                    if (textField is JTextField) {
-                        val valueTextField = (textField as JTextField).text
-//                        val newtextField = getComponent(value = valueTextField)
-//                        remove(textField)
-//                        textField = newtextField
-//                        add(newtextField)
-                        observers.forEach {
-                            it.elementAdded(valueTextField, compJson, text.text.split(":")[0])
-                        }
-                        // transformar em checkbox, ou em lista, ....
+                textField.addKeyListener(Keyboard(textField, object : UpdatedAction {
+                    override fun invoke(text: String) {
+                        informObserversAdded(textField.text, this@PanelView, this@PanelView.components.indexOf(this@NewProperty), compJson, labelText.text)
                     }
-                })
+                }))
             }
         }
-
-        private fun deleteProperty() {
-            remove(this)
-//            observers.forEach { it.panelRemoved() }
-        }
-
     }
 
     private fun getComponent(key: String, value: String): JComponent {
         val type = checkType(value)
         return if (type is Boolean) setUpCheckBox(type,compJson, key)
         else {
+            println("getComponent: $type")
             setUpTextField(type.toString(), compJson, key = key)
         }
     }
@@ -265,11 +210,11 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
     }
 
     private fun JComponent.addMouseListenerToArray() = addMouseListener(MouseClick({addNewPropertyArray()}, {addNewPropertyArray()}))
-    private fun setUpCheckBox(value: Boolean, json : JsonElement, key: String? = null) : JCheckBox {
+    private fun setUpCheckBox(value: Boolean, json: JsonElement, key: String? = null): JCheckBox {
         val box = JCheckBox().apply { isSelected = value }
         box.addItemListener { e ->
             if (e?.stateChange == ItemEvent.SELECTED || e?.stateChange == ItemEvent.DESELECTED) {
-                informObserversUpdated(box.isSelected.toString(), json = json, name = key)
+                informObserversUpdated(box.isSelected.toString(), jsonIndex = components.indexOf(box), json = json, name = key)
             }
         }
         box.addMouseListenerToArray()
@@ -279,26 +224,55 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
     private fun setUpTextField(value: String, jsonEle : JsonElement, elemIndex : Int? = null, key : String? = null) : JTextField {
         val textfield = JTextField(value).apply {
             addMouseListenerToArray()
-            if (jsonEle is ArrayJSON)
-                addKeyListener(Keyboard(this, object: UpdatedAction {
-                    override fun invoke(text: String, index: Int?, json: JsonElement?, name: String?) {
-                        println("TextField updated invoke")
+            addKeyListener(Keyboard(this, object : UpdatedAction {
+                override fun invoke(text: String) {
+                    println("TextField updated invoke")
+                    val type = checkType(text)
+                    if (type is Boolean) {
+                        val x = setUpCheckBox(type, compJson)
+                        add(x)
+                        if (jsonEle is ArrayJSON) {
+                            changeViewArray(this@apply,x)
+                            informObserversUpdated(x.isSelected.toString(), elemIndex)
+                        }
+                        else {
+                            informObserversUpdated(x.isSelected.toString(), json = jsonEle, name = key)
+                            changeViewObject(this@apply.parent ,x.isSelected,key!!)
+                        }
+                    } else if (jsonEle is ArrayJSON)
                         informObserversUpdated(this@apply.text, elemIndex)
-                    }
-                }))
-            else
-                addKeyListener(Keyboard(this, object: UpdatedAction {
-                    override fun invoke(text: String, index: Int?, json: JsonElement?, name: String?) {
+                    else if (jsonEle is ObjectJSON)
                         informObserversUpdated(this@apply.text, json = jsonEle, name = key)
-                    }
-                }))
+                }
+            }))
         }
         return textfield
+    }
+
+    fun changeViewObject(component: JComponent, boolean: Boolean, text: String=""){
+        val originalIndex = components.indexOf(component)
+        if (originalIndex != -1) {
+            remove(component)
+            add(ObjectProperty(text,JSONBoolean(boolean)), originalIndex)
+            revalidate()
+            repaint()
+        }
+    }
+    fun changeViewArray(component: Component, newContainer: Container){
+        val originalIndex = components.indexOf(component)
+        if (originalIndex != -1) {
+            remove(component)
+            add(newContainer, originalIndex)
+            revalidate()
+            repaint()
+        }
     }
 }
 
 
+
 fun checkType(text: String): Any? {
+    println("checkType: $text")
     return when {
         text.toIntOrNull() != null -> text.toInt()
         text.toDoubleOrNull() != null -> text.toDouble()

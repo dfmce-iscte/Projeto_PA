@@ -54,9 +54,11 @@ class Editor {
 
         val panel = PanelView(compJson = model)
         panel.addObserver(object : PanelViewObserver {
-            override fun elementAdded(text: String, parent: CompositeJSON, name : String?): JsonElement {
+            override fun elementAdded(text: String, panelView: PanelView, indexToReplace : Int, parent: CompositeJSON, name : String?) {
                 //convert text to right object type e dps toJSON
-                return checkType(text)?.toJSON(parent = parent, name = name)!!
+                val jsonElement = checkType(text)?.toJSON(parent = parent, name = name)!!
+                panelView.replaceComponent(indexToReplace, jsonElement, name)
+                model.updateJSON()
             }
             override fun elementRemoved(parent: CompositeJSON, children : JsonElement) {
                 parent.removeChildren(children)

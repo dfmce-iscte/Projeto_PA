@@ -35,7 +35,6 @@ data class Mix(val name: String = "") {
     Criar botão para criar objeto
     Adiconar novos elementos a arrays
     Corrigir checkbox
-    Atualizar valores dos arrays
 
  */
 
@@ -55,19 +54,19 @@ class Editor {
 
         val panel = PanelView(compJson = model)
         panel.addObserver(object : PanelViewObserver {
-            override fun panelAdded(text: String, parent: CompositeJSON, name : String?): JsonElement {
+            override fun elementAdded(text: String, parent: CompositeJSON, name : String?): JsonElement {
                 //convert text to right object type e dps toJSON
                 return checkType(text)?.toJSON(parent = parent, name = name)!!
             }
-            override fun panelRemoved(parent: CompositeJSON, children : JsonElement) {
+            override fun elementRemoved(parent: CompositeJSON, children : JsonElement) {
                 parent.removeChildren(children)
                 //falta ver onde se remove o panel. Aqui ou na classe PanelView
                 model.updateJSON()
             }
-            override fun panelUpdated(text: String, json: JsonElement, name: String?) {
+            override fun elementUpdated(text: String, json: JsonElement, name: String?) {
                 val newValue = checkType(text)
                 if (json.parent is ArrayJSON) {
-                    println("New value: $newValue")
+                    println("New array value: $newValue")
                     (json.parent as ArrayJSON).updateChildren(json, newValue)
                 } else if (json is ObjectJSON){
                     println("New object value: $newValue")

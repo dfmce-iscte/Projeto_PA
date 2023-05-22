@@ -98,7 +98,7 @@ class ObjectJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
 
     internal fun addElement(name: String, element: JsonElement) {
 //        observers.forEach { element.addObserver(it) }
-        println("Name: $name Element: $element")
+//        println("Name: $name Element: $element")
         properties[name] = element
         informElementAdded(element)
     }
@@ -136,7 +136,7 @@ class ArrayJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
         get() = elements
 
     fun addElement(element: JsonElement) {
-        println("Adding element to array")
+//        println("Adding element to array")
 //        observers.forEach { element.addObserver(it) }
         elements.add(element)
         informElementAdded(element)
@@ -158,8 +158,6 @@ class ArrayJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
     }
 
     fun updateChildren(children: JsonElement, value: Any?){
-        println("Value is String ${value is String}")
-        println("Children $children")
         val newValue = when(value){
             is String -> JSONString(value, this)
             is Number -> JSONNumber(value, this)
@@ -169,9 +167,9 @@ class ArrayJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
         elements.forEach{
             if (it === children)  {
                 val index = elements.indexOf(it)
-                println(elements[index])
+                println("Old value: ${elements[index]}")
                 elements[index] = newValue
-                println(elements[index])
+                println("New value: ${elements[index]}")
             }
         }
         elements.removeAt(elements.size - 1)

@@ -1,4 +1,3 @@
-import javafx.scene.Parent
 import java.awt.Component
 import java.awt.Dimension
 import java.awt.GridLayout
@@ -26,20 +25,12 @@ data class Mix(val name: String = "") {
 }
 
 /*
-* Se passarmos um object class do Mix, e dps dá-se run, tem de ter os paneis logo criados
-* Os panels reagem ao modelo.J
-* */
-
-/*
     Fazer botão delete
-    Criar botão para criar objeto
-    Adiconar novos elementos a arrays
-    Corrigir checkbox
-
+Criar array
  */
 
 class Editor {
-    //    val model = ObjectJSON()
+//        val model = ObjectJSON()
     val model = (Mix("ze").toJSON() as CompositeJSON)
     val frame = JFrame("JSON Object Editor").apply {
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
@@ -54,10 +45,12 @@ class Editor {
 
         val panel = PanelView(compJson = model)
         panel.addObserver(object : PanelViewObserver {
-            override fun elementAdded(text: String, panelView: PanelView, indexToReplace : Int, parent: CompositeJSON, name : String?) {
-                //convert text to right object type e dps toJSON
-                val jsonElement = checkType(text)?.toJSON(parent = parent, name = name)!!
-                panelView.replaceComponent(indexToReplace, jsonElement, name)
+            override fun elementAdded(text: String?, panelView: PanelView, indexToReplace : Int, parent: CompositeJSON, name : String?) {
+                if (text == null && parent is ObjectJSON && name != null) {
+                    panelView.replaceComponent(indexToReplace, ObjectJSON(parent = parent, name = name), name)
+                } else if (text != null) {
+                    panelView.replaceComponent(indexToReplace, checkType(text)?.toJSON(parent = parent, name = name)!!, name)
+                }
                 model.updateJSON()
             }
             override fun elementRemoved(parent: CompositeJSON, children : JsonElement) {
@@ -65,16 +58,18 @@ class Editor {
                 //falta ver onde se remove o panel. Aqui ou na classe PanelView
                 model.updateJSON()
             }
-            override fun elementUpdated(text: String, json: JsonElement, name: String?) {
+            override fun elementUpdated(text: String, json: JsonElement, key: String?, panelView: PanelView?, indexToReplace: Int?) {
                 val newValue = checkType(text)
+                var newJson : JsonElement? = null
                 if (json.parent is ArrayJSON) {
-                    println("New array value: $newValue")
-                    (json.parent as ArrayJSON).updateChildren(json, newValue)
+                    newJson = (json.parent as ArrayJSON).updateChildren(json, newValue)
                 } else if (json is ObjectJSON){
-                    println("New object value: $newValue")
-                    println(name)
-                    newValue?.toJSON(parent = json, name = name)
+                    newJson = newValue?.toJSON(parent = json, name = key)
                 }
+                if (panelView != null && indexToReplace != null) {
+                    panelView.replaceComponent(indexToReplace, newJson!!, key)
+                }
+
                 model.updateJSON()
             }
         })
@@ -111,75 +106,6 @@ class Editor {
         frame.isVisible = true
     }
 
-//    fun checkType(text: String): Any? {
-//        return when {
-//            text.toIntOrNull() != null -> text.toInt()
-//            text.toDoubleOrNull() != null -> text.toDouble()
-//            text.toFloatOrNull() != null -> text.toFloat()
-//            text.toLongOrNull() != null -> text.toLong()
-//            text.equals("true", ignoreCase = true) -> true
-//            text.equals("false", ignoreCase = true) -> false
-//            text.isEmpty() -> null
-//            else -> text
-//        }
-//    }
-
-    fun testPanel(): JPanel =
-        JPanel().apply {
-            layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            alignmentX = Component.LEFT_ALIGNMENT
-            alignmentY = Component.TOP_ALIGNMENT
-
-            add(testWidget("A", "um"))
-            add(testWidget("B", "dois"))
-            add(testWidget("C", "tres"))
-
-            // menu
-            addMouseListener(object : MouseAdapter() {
-                override fun mouseClicked(e: MouseEvent) {
-                    if (SwingUtilities.isRightMouseButton(e)) {
-                        val menu = JPopupMenu("Message")
-                        val add = JButton("add")
-                        add.addActionListener {
-                            val text = JOptionPane.showInputDialog("text")
-                            add(testWidget(text, "?"))
-                            menu.isVisible = false
-                            revalidate()
-                            frame.repaint()
-                        }
-                        val del = JButton("delete all")
-                        del.addActionListener {
-                            components.forEach {
-                                remove(it)
-                            }
-                            menu.isVisible = false
-                            revalidate()
-                            frame.repaint()
-                        }
-                        menu.add(add);
-                        menu.add(del)
-                        menu.show(this@apply, 100, 100);
-                    }
-                }
-            })
-        }
-
-
-    fun testWidget(key: String, value: String): JPanel =
-        JPanel().apply {
-            layout = BoxLayout(this, BoxLayout.X_AXIS)
-            alignmentX = Component.LEFT_ALIGNMENT
-            alignmentY = Component.TOP_ALIGNMENT
-
-            add(JLabel(key))
-            val text = JTextField(value)
-            text.addFocusListener(object : FocusAdapter() {
-                override fun focusLost(e: FocusEvent) {
-                    println("perdeu foco: ${text.text}")
-                }
-            })
-            add(text)
-        }
 }
 
 

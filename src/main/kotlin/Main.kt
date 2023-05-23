@@ -157,7 +157,7 @@ class ArrayJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
         informElementRemoved(children)
     }
 
-    fun updateChildren(children: JsonElement, value: Any?){
+    fun updateChildren(children: JsonElement, value: Any?) : JsonElement{
         val newValue = when(value){
             is String -> JSONString(value, this)
             is Number -> JSONNumber(value, this)
@@ -174,6 +174,7 @@ class ArrayJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
         }
         elements.removeAt(elements.size - 1)
         updateJSON()
+        return newValue
     }
 
     fun getChildren(index:Int) = elements[index]

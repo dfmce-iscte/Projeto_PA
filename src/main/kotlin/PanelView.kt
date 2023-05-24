@@ -15,6 +15,12 @@ interface UpdatedAction {
 
 }
 class PanelView(private val compJson: CompositeJSON) : JPanel() {
+    companion object {
+        private const val IS_OBJECT = "New Object"
+        private const val IS_ARRAY = "New Array"
+        private const val IS_PROPERTY = "New property"
+    }
+
 
     private val observers: MutableList<PanelViewObserver> = mutableListOf()
 
@@ -167,7 +173,7 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
                 informObserversUpdated(box.isSelected.toString(), jsonIndex = components.indexOf(box), json = json, name = key)
             }
         }
-        box.addMouseListenerToArray()
+        box.addMouseListenerToComponent(true)
         return box
     }
 

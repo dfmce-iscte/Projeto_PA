@@ -66,6 +66,7 @@ sealed interface CompositeJSON : JsonElement {
 
     fun removeChildren(children : JsonElement)
 
+
 }
 
 class ObjectJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
@@ -116,7 +117,7 @@ class ObjectJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
         informElementRemoved(children)
     }
 
-
+    fun removeByKey(key : String) = properties.remove(key)
 
 }
 
@@ -129,6 +130,9 @@ class ArrayJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
     init {
         if (parent is ArrayJSON) parent.addElement(this)
     }
+
+    fun removeByIndex(index: Int) = elements.removeAt(index)
+
 
     private val elements = mutableListOf<JsonElement>()
 

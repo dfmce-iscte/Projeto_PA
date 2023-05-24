@@ -25,7 +25,6 @@ data class Mix(val name: String = "") {
 }
 
 /*
-    Fazer botão delete
 Criar array
  */
 
@@ -45,17 +44,41 @@ class Editor {
 
         val panel = PanelView(compJson = model)
         panel.addObserver(object : PanelViewObserver {
-            override fun elementAdded(text: String?, panelView: PanelView, indexToReplace : Int, parent: CompositeJSON, name : String?) {
-                if (text == null && parent is ObjectJSON && name != null) {
-                    panelView.replaceComponent(indexToReplace, ObjectJSON(parent = parent, name = name), name)
-                } else if (text != null) {
+            override fun elementAdded(text: String?, panelView: PanelView, indexToReplace : Int, parent: CompositeJSON, name : String?, newIsArray : Boolean?) {
+                if (text == null && parent is ObjectJSON && name != null && newIsArray != null) {
+                    if (!newIsArray) {
+                        println("Parent is object and new is object")
+                        panelView.replaceComponent(indexToReplace, ObjectJSON(parent = parent, name = name), name)
+                    }
+                    else {
+                        println("Parent is object and new is array")
+                        panelView.replaceComponent(indexToReplace, ArrayJSON(parent = parent, name = name), name)
+                    }
+                } else if (text == null && parent is ArrayJSON && newIsArray != null) {
+                    if (!newIsArray) {
+                        println("Parent is array and new is object")
+                        panelView.replaceComponent(indexToReplace, ObjectJSON(parent = parent))
+                    }
+                    else {
+                        println("Parent is array and new is array")
+                        panelView.replaceComponent(indexToReplace, ArrayJSON(parent = parent))
+                    }
+                }
+                else if (text != null) {
+                    println("Text is not null")
                     panelView.replaceComponent(indexToReplace, checkType(text)?.toJSON(parent = parent, name = name)!!, name)
                 }
                 model.updateJSON()
             }
-            override fun elementRemoved(parent: CompositeJSON, children : JsonElement) {
-                parent.removeChildren(children)
-                //falta ver onde se remove o panel. Aqui ou na classe PanelView
+            override fun elementRemoved(indexToRemove:Int, panelView: PanelView, parent: CompositeJSON, key : String?) {
+                if (parent is ObjectJSON && key != null)
+                    parent.removeByKey(key)
+                else if (parent is ArrayJSON)
+                    parent.removeByIndex(indexToRemove)
+
+
+                println("indexToRemove: $indexToRemove")
+                panelView.removeProperty(indexToRemove)
                 model.updateJSON()
             }
             override fun elementUpdated(text: String, json: JsonElement, key: String?, panelView: PanelView?, indexToReplace: Int?) {

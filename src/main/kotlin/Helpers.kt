@@ -45,6 +45,7 @@ class Editor {
         val panel = PanelView(compJson = model)
         panel.addObserver(object : PanelViewObserver {
             override fun elementAdded(text: String?, panelView: PanelView, indexToReplace : Int, parent: CompositeJSON, name : String?, newIsArray : Boolean?) {
+                println("Element added text : $text")
                 if (text == null && parent is ObjectJSON && name != null && newIsArray != null) {
                     if (!newIsArray) {
                         println("Parent is object and new is object")

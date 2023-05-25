@@ -1,5 +1,6 @@
 import java.awt.Component
 import java.awt.Dimension
+import java.awt.Font
 import java.awt.GridLayout
 import java.awt.event.*
 import javax.swing.*
@@ -45,7 +46,7 @@ class Editor {
         val panel = PanelView(compJson = model)
         panel.addObserver(object : PanelViewObserver {
             override fun elementAdded(text: String?, panelView: PanelView, indexToReplace : Int, parent: CompositeJSON, name : String?, newIsArray : Boolean?) {
-                println("Element added text : $text")
+//                println("Element added text : $text")
                 if (text == null && parent is ObjectJSON && name != null && newIsArray != null) {
                     if (!newIsArray) {
                         println("Parent is object and new is object")
@@ -65,9 +66,13 @@ class Editor {
                         panelView.replaceComponent(indexToReplace, ArrayJSON(parent = parent))
                     }
                 }
+                else if (text == null || text == "null") {
+                    println("Text is null")
+                    panelView.replaceComponent(indexToReplace, checkType("").toJSON(parent = parent, name = name)!!, name)
+                }
                 else if (text != null) {
-                    println("Text is not null")
-                    panelView.replaceComponent(indexToReplace, checkType(text)?.toJSON(parent = parent, name = name)!!, name)
+//                    println("Text is not null")
+                    panelView.replaceComponent(indexToReplace, checkType(text).toJSON(parent = parent, name = name)!!, name)
                 }
                 model.updateJSON()
             }
@@ -77,8 +82,6 @@ class Editor {
                 else if (parent is ArrayJSON)
                     parent.removeByIndex(indexToRemove)
 
-
-                println("indexToRemove: $indexToRemove")
                 panelView.removeProperty(indexToRemove)
                 model.updateJSON()
             }
@@ -96,6 +99,11 @@ class Editor {
 
                 model.updateJSON()
             }
+            override fun updateNullValue(panelView: PanelView, indexToReplace: Int, key: String?) {
+                println("updateNullValue")
+                panelView.replaceComponent(indexToReplace, JSONString("N/A"), key)
+                model.updateJSON()
+            }
         })
         scrollPane.setViewportView(panel)
         add(scrollPane)
@@ -106,6 +114,7 @@ class Editor {
             tabSize=2
             text = "$model"
             isEditable = false
+            font = Font("SansSerif", Font.BOLD, 20)
         }
         right.add(textArea)
         add(right)

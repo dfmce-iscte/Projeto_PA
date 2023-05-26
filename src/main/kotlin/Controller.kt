@@ -1,8 +1,6 @@
-import java.awt.Component
 import java.awt.Dimension
 import java.awt.Font
 import java.awt.GridLayout
-import java.awt.event.*
 import javax.swing.*
 
 
@@ -68,11 +66,12 @@ class Editor {
                 }
                 else if (text == null || text == "null") {
                     println("Text is null")
-                    panelView.replaceComponent(indexToReplace, checkType("").toJSON(parent = parent, name = name)!!, name)
+                    panelView.replaceComponent(indexToReplace, checkType("").toJSON(parent = parent, name = name), name)
                 }
-                else if (text != null) {
+                else {
 //                    println("Text is not null")
-                    panelView.replaceComponent(indexToReplace, checkType(text).toJSON(parent = parent, name = name)!!, name)
+                    panelView.replaceComponent(indexToReplace,
+                        checkType(text).toJSON(parent = parent, name = name), name)
                 }
                 model.updateJSON()
             }
@@ -91,7 +90,7 @@ class Editor {
                 if (json.parent is ArrayJSON) {
                     newJson = (json.parent as ArrayJSON).updateChildren(json, newValue)
                 } else if (json is ObjectJSON){
-                    newJson = newValue?.toJSON(parent = json, name = key)
+                    newJson = newValue.toJSON(parent = json, name = key)
                 }
                 if (panelView != null && indexToReplace != null) {
                     panelView.replaceComponent(indexToReplace, newJson!!, key)
@@ -139,7 +138,12 @@ class Editor {
         frame.isVisible = true
     }
 
+
 }
+
+
+
+
 
 
 

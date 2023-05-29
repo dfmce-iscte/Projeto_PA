@@ -165,7 +165,7 @@ class TestReflexao {
         val nullName = null
         val i = 5
         val json = i.toJSON()
-        val value = (json as JSONNumber).getValue()
+        val value = (json as JSONNumber).getValue
 
 
         println(myMap.toJSON())

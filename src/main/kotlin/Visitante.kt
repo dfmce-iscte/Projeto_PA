@@ -40,9 +40,9 @@ class CheckStructure(val property: String, val type: KClass<*>) : Visitor {
             var value: Any? = null
 
             when (element) {
-                is JSONString -> value = element.getValue()
-                is JSONNumber -> value = element.getValue()
-                is JSONBoolean -> value = element.getValue()
+                is JSONString -> value = element.getValue
+                is JSONNumber -> value = element.getValue
+                is JSONBoolean -> value = element.getValue
                 else -> JSONNull()
             }
 

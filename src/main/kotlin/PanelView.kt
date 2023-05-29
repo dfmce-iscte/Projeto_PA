@@ -13,11 +13,11 @@ interface PanelViewObserver {
     )
 
     fun elementUpdated(
-        text: String,
+        newValue: Any,
         json: JsonElement,
-        key: String? = null,
-        panelView: PanelView? = null,
-        indexToReplace: Int? = null
+        indexToReplace: Int,
+        panelView: PanelView,
+        key: String? = null
     )
 
     fun updateNullValue(panelView: PanelView, indexToReplace: Int, key: String? = null)
@@ -67,8 +67,7 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
     }
 
     fun replaceComponent(indexToReplace: Int, json: JsonElement, key: String? = null) {
-        if (indexToReplace < components.size)
-            remove(indexToReplace)
+        if (indexToReplace < components.size) remove(indexToReplace)
         if (key != null) {
             add(ObjectProperty(key, json), indexToReplace)
         } else if (json is CompositeJSON) {
@@ -78,8 +77,7 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
             observers.forEach { panel.addObserver(it) }
             add(panel, indexToReplace)
 
-        } else
-            add(getComponentArray(json.toString().replace("\"", ""), indexToReplace), indexToReplace)
+        } else add(getComponentArray(json), indexToReplace)
     }
 
     private fun compJsonIsArray(json: ArrayJSON) {
@@ -89,74 +87,60 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
                 observers.forEach { panel.addObserver(it) }
                 add(PanelView(it))
             } else {
-                val area = getComponentArray(value = it.toString().replace("\"", ""), json.getElements.indexOf(it))
-                add(area)
+                add(getComponentArray(value = it))
             }
         }
-//        if (json.getElements.isEmpty())
-//            addNewPropertyArray(IS_PROPERTY)
     }
 
-    private fun informObserversUpdated(
-        text: String,
-        jsonIndex: Int? = null,
-        json: JsonElement? = null,
-        name: String? = null,
-        indexToReplace: Int? = null
-    ) {
-        if (jsonIndex != null && compJson is ArrayJSON) {
-//            println("informObserversUpdated: Array")
-//            println("Children: ${compJson.getChildren(jsonIndex)}")
+    private fun checkIfIsNullORBoolean(value: Any) = (value is String && value.isEmpty()) || (value is Boolean)
+
+    private fun informObserversUpdated(newValue: Any, indexToReplace: Int, name: String? = null) {
+        if (compJson is ArrayJSON)
             observers.forEach {
-                it.elementUpdated(
-                    text,
-                    compJson.getChildren(jsonIndex),
-                    panelView = this,
-                    indexToReplace = indexToReplace
-                )
+                it.elementUpdated(newValue, compJson.getChildren(indexToReplace), indexToReplace, this)
             }
-        } else if (json != null) {
-            observers.forEach { it.elementUpdated(text, json, name, panelView = this, indexToReplace = indexToReplace) }
-        }
+        else if (name != null)
+            observers.forEach {
+                it.elementUpdated(newValue, compJson, indexToReplace, this, name)
+            }
     }
 
     private fun informObserversAdded(
-        text: String?, panelView: PanelView, indexToReplace: Int, parent: CompositeJSON, key: String? = null,
+        text: String? = null,
+        indexToReplace: Int,
+        parent: CompositeJSON,
+        key: String? = null,
         newIsArray: Boolean? = null
     ) {
         println("informObserversAdded: $text")
-        observers.forEach { it.elementAdded(text, panelView, indexToReplace, parent, key, newIsArray) }
+        observers.forEach { it.elementAdded(text, this, indexToReplace, parent, key, newIsArray) }
     }
 
-    private fun informObserversRemoved(
-        indexToRemove: Int,
-        key: String? = null,
-        componentIsPanelView: PanelView? = null
-    ) {
+    private fun informObserversRemoved(indexToRemove: Int, key: String? = null, componentIsPanelView: PanelView? = null) {
         observers.forEach {
             if (componentIsPanelView != null && componentIsPanelView.parent is PanelView && compJson.parent != null) {
-                println("informObserversRemoved: $indexToRemove PanelView")
                 it.elementRemoved(indexToRemove, componentIsPanelView.parent as PanelView, compJson.parent!!, key)
-            } else
-                it.elementRemoved(indexToRemove, this, compJson, key)
+            } else it.elementRemoved(indexToRemove, this, compJson, key)
         }
     }
 
     private fun informObserversNullValue(indexToReplace: Int, key: String? = null) {
-        println("informObserversNullValue: $indexToReplace")
+//        println("informObserversNullValue: $indexToReplace")
         observers.forEach { it.updateNullValue(this, indexToReplace, key) }
     }
 
-    fun removeProperty(indexToRemove: Int) {
-        if (compJson.parent == null && components.isEmpty()) return
-        if (components.size == 1) {
+    fun removeProperty(indexToRemove: Int) : Component? {
+        if (compJson.parent == null && components.isEmpty()) return null
+        /*if (components.size == 1) {
             (parent as? ObjectProperty)?.removeObjectProperty()
             (parent as? PanelView)?.informObserversRemoved(parent.components.indexOf(this))
-        } else {
-            remove(indexToRemove)
-            revalidate()
-            repaint()
-        }
+        } else {*/
+        val componentRemoved = getComponent(indexToRemove)
+        remove(indexToRemove)
+        revalidate()
+        repaint()
+        return componentRemoved
+//        }
     }
 
     private fun addNewProperty(new: String) {
@@ -166,14 +150,13 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
     }
 
     private fun addNewPropertyArray(new: String) {
-        println("addNewPropertyArray: $new")
+//        println("addNewPropertyArray: $new")
         when (new) {
             IS_PROPERTY -> {
                 val field = JTextField()
                 field.addKeyListener(Keyboard(field, object : UpdatedAction {
                     override fun invoke(text: String) {
-                        if (text.isNotEmpty())
-                            informObserversAdded(text, this@PanelView, components.indexOf(field), compJson)
+                        informObserversAdded(text, components.indexOf(field), compJson)
                     }
                 }))
                 add(field)
@@ -182,37 +165,34 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
             }
 
             IS_ARRAY -> {
-                informObserversAdded(null, this, components.size, compJson, newIsArray = true)
+                informObserversAdded(null, components.size, compJson, newIsArray = true)
             }
 
             else -> {
-                informObserversAdded(null, this, components.size, compJson, newIsArray = false)
+                informObserversAdded(null, components.size, compJson, newIsArray = false)
             }
         }
     }
 
-    private fun getComponent(key: String, value: String): JComponent {
-        val type = checkType(value)
-        println(type)
-        val result = if (type is Boolean) setUpCheckBox(type, compJson, key)
-        else if (type == "") setUpCheckNull(compJson, key)
-        else {
-//            println("getComponent: $type")
-            setUpTextField(type.toString(), compJson, key = key)
+    private fun getComponent(key: String, value: JsonElement): JComponent {
+        val result = when (value) {
+            is JSONBoolean -> setUpCheckBox(value.getValue, key)
+            is JSONNull -> setUpCheckNull()
+            else -> {
+                setUpTextField(value.toString().replace("\"",""), key = key)
+            }
         }
         result.addMouseListenerToComponent(false)
         return result
     }
 
-    private fun getComponentArray(value: String, index: Int): JComponent {
-        println("getComponentArray: $value")
-        val type = checkType(value)
-        val result = if (type is Boolean) setUpCheckBox(type, compJson)
-        else if (type == "") setUpCheckNull(compJson)
-        else {
-            println("SetUpTextField")
-            setUpTextField(type.toString(), compJson, elemIndex = index)
-        }
+    private fun getComponentArray(value: JsonElement): JComponent {
+        val result =
+            when (value) {
+                is JSONBoolean -> setUpCheckBox(value.getValue)
+                is JSONNull -> setUpCheckNull()
+                else -> setUpTextField(value.toString().replace("\"",""))
+            }
         result.addMouseListenerToComponent(true)
         return result
     }
@@ -220,127 +200,72 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
     private fun JComponent.addMouseListenerToComponent(toArray: Boolean) {
         if (toArray) {
             addMouseListener(
-                MouseClick(
-                    addAction = { addNewPropertyArray(IS_PROPERTY) },
+                MouseClick(addAction = { addNewPropertyArray(IS_PROPERTY) },
                     addObjectAction = { addNewPropertyArray(IS_OBJECT) },
                     addArrayAction = { addNewPropertyArray(IS_ARRAY) },
                     deleteAction = { index: Int, key: String?, panel: PanelView? ->
                         informObserversRemoved(
-                            index,
-                            key,
-                            panel
+                            index, key, panel
                         )
                     },
                     addNullAction = { indexToReplace: Int, key: String? ->
                         informObserversNullValue(
-                            indexToReplace,
-                            key
+                            indexToReplace, key
                         )
                     })
             )
         } else {
             addMouseListener(
-                MouseClick(
-                    addAction = { addNewProperty(IS_PROPERTY) },
+                MouseClick(addAction = { addNewProperty(IS_PROPERTY) },
                     addObjectAction = { addNewProperty(IS_OBJECT) },
                     addArrayAction = { addNewProperty(IS_ARRAY) },
                     deleteAction = { index: Int, key: String?, panel: PanelView? ->
                         informObserversRemoved(
-                            index,
-                            key,
-                            panel
+                            index, key, panel
                         )
                     },
                     addNullAction = { indexToReplace: Int, key: String? ->
                         informObserversNullValue(
-                            indexToReplace,
-                            key
+                            indexToReplace, key
                         )
                     })
             )
         }
     }
 
-    private fun setUpCheckBox(value: Boolean, json: JsonElement, key: String? = null): JCheckBox {
-        val box = JCheckBox().apply { isSelected = value }
-        box.addItemListener { e ->
-            if (e?.stateChange == ItemEvent.SELECTED || e?.stateChange == ItemEvent.DESELECTED) {
-                informObserversUpdated(
-                    box.isSelected.toString(),
-                    jsonIndex = components.indexOf(box),
-                    json = json,
-                    name = key
-                )
-            }
+    private fun setUpCheckBox(value: Boolean, key: String? = null): JCheckBox {
+        return JCheckBox().apply {
+            isSelected = value
+            addMouseListener(object : MouseAdapter() {
+                override fun mouseClicked(e: MouseEvent?) {
+                    if (e?.button == MouseEvent.BUTTON1)
+                        when (compJson) {
+                            is ArrayJSON -> informObserversUpdated(isSelected, name = key, indexToReplace = this@PanelView.components.indexOf(this@apply))
+                            else -> informObserversUpdated(isSelected, name = key, indexToReplace = this@PanelView.components.indexOf(this@apply.parent))
+                        }
+                }
+            })
         }
-//        box.addMouseListenerToComponent(true)
-        return box
     }
 
-    private fun setUpCheckNull(json: JsonElement, key: String? = null): JLabel {
-        println("aqui")
-        //        nullElement.addMouseListenerToComponent(true)
-        return JLabel("N/A")
-    }
+    private fun setUpCheckNull() = JLabel("N/A")
 
-    private fun setUpTextField(
-        value: String,
-        parentJsonEle: JsonElement,
-        elemIndex: Int? = null,
-        key: String? = null
-    ): JTextField {
-        val textfield = JTextField(value).apply {
-            if (text.equals("N/A")) {
-                text = ""
-            }
+    private fun setUpTextField(value: String, key: String? = null): JTextField {
+        val textField = JTextField(value).apply {
+            if (text.equals("N/A")) text = ""
+
             addKeyListener(Keyboard(this, object : UpdatedAction {
                 override fun invoke(text: String) {
-//                    println("TextField updated invoke")
-                    val type = checkType(text)
-                    if (parentJsonEle is ArrayJSON && elemIndex != null) {
-                        when (type) {
-                            is String ->
-                                informObserversUpdated(
-                                    type,
-                                    elemIndex,
-                                    indexToReplace = this@PanelView.components.indexOf(this@apply)
-                                )
-
-                            is Boolean ->
-                                informObserversUpdated(
-                                    type.toString(),
-                                    elemIndex,
-                                    indexToReplace = this@PanelView.components.indexOf(this@apply)
-                                )
-
-                            else -> informObserversUpdated(this@apply.text, elemIndex)
-                        }
-
-                    } else if (parentJsonEle is ObjectJSON && key != null) {
-                        when (type) {
-                            is String ->
-                                informObserversUpdated(
-                                    type,
-                                    json = compJson,
-                                    name = key,
-                                    indexToReplace = this@PanelView.components.indexOf(this@apply.parent)
-                                )
-
-                            is Boolean ->
-                                informObserversUpdated(
-                                    type.toString(),
-                                    json = compJson,
-                                    name = key,
-                                    indexToReplace = this@PanelView.components.indexOf(this@apply.parent)
-                                )
-
-                            else -> informObserversUpdated(this@apply.text, json = parentJsonEle, name = key)
-                        }
+                    val textInRightType = checkType(text)
+                    if (compJson is ArrayJSON) {
+                        informObserversUpdated(textInRightType, indexToReplace = this@PanelView.components.indexOf(this@apply))
+                    } else if (compJson is ObjectJSON && key != null) {
+                        informObserversUpdated(textInRightType, name = key, indexToReplace = this@PanelView.components.indexOf(this@apply.parent))
                     }
                 }
             }))
         }
-        return textfield
+        return textField
     }
 
     inner class Keyboard(private val jTextField: JTextField, private val action: UpdatedAction) : KeyAdapter() {
@@ -358,14 +283,14 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
         val addArrayAction: () -> Unit,
         val addNullAction: (Int, String?) -> Unit
     ) : MouseAdapter() {
+
         override fun mouseClicked(e: MouseEvent?) {
-            if (e?.button == MouseEvent.BUTTON1 && e.component is JLabel &&
-                !(e.component.parent is ObjectProperty && e.component.parent.components.indexOf(e.component) == 0 )) actionNALabel(e)
+            if (e?.button == MouseEvent.BUTTON1 && e.component is JLabel && !(e.component.parent is ObjectProperty &&
+                        e.component.parent.components.indexOf(e.component) == 0)) actionNALabel(e)
             else if (e?.button == MouseEvent.BUTTON3) actionRightClick(e)
         }
 
         private fun actionNALabel(e: MouseEvent) {
-            println("actionNALabel")
             if (e.component.parent is ObjectProperty) {
                 val parent = (e.component.parent as ObjectProperty)
                 val key = (parent.components[0] as JLabel).text
@@ -375,7 +300,6 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
                     }
                 }
             } else if (e.component.parent is PanelView && compJson is ArrayJSON) {
-                println("Entrou    n")
                 addNullAction(e.component.parent.components.indexOf(e.component), null)
             }
         }
@@ -422,23 +346,12 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
         private fun deleteButton(e: MouseEvent) {
             if (e.component.parent is ObjectProperty) {
                 e.component.parent.components.forEach {
-                    if (it is JLabel)
-                        deleteAction(
-                            this@PanelView.components.indexOf(e.component.parent),
-                            it.text,
-                            null
-                        )
+                    if (it is JLabel) deleteAction(this@PanelView.components.indexOf(e.component.parent), it.text, null)
                 }
             } else {
                 if (e.component is PanelView) {
-                    println("Delete PanelView")
-                    deleteAction(
-                        e.component.parent.components.indexOf(e.component),
-                        null,
-                        e.component as PanelView
-                    )
-                } else
-                    deleteAction(this@PanelView.components.indexOf(e.component), null, null)
+                    deleteAction(e.component.parent.components.indexOf(e.component), null, e.component as PanelView)
+                } else deleteAction(this@PanelView.components.indexOf(e.component), null, null)
             }
         }
     }
@@ -457,7 +370,7 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
                 observers.forEach { panel.addObserver(it) }
                 add(panel)
             } else {
-                val area = getComponent(value = value.toString().replace("\"", ""), key = key)
+                val area = getComponent(value = value, key = key)
                 add(area)
             }
         }
@@ -478,39 +391,23 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
             val textField = JTextField()
             textField.addKeyListener(Keyboard(textField, object : UpdatedAction {
                 override fun invoke(text: String) {
-                    if (text.isNotEmpty())
-                        removeInitialTextFieldAndAddLabelAndTextField(textField)
+                    if (text.isNotEmpty() && !text.contains(" ")) removeInitialTextFieldAndAddLabelAndTextField(textField)
                 }
             }))
             add(textField)
         }
 
         private fun removeInitialTextFieldAndAddLabelAndTextField(labelText: JTextField) {
-            if (labelText.text.isEmpty())
-                return
+            val index = this@PanelView.components.indexOf(this@NewProperty)
             when (new) {
                 IS_OBJECT -> {
                     removeAll()
-                    informObserversAdded(
-                        null,
-                        this@PanelView,
-                        this@PanelView.components.indexOf(this@NewProperty),
-                        compJson,
-                        labelText.text,
-                        false
-                    )
+                    informObserversAdded(null, index, compJson, labelText.text, false)
                 }
 
                 IS_ARRAY -> {
                     removeAll()
-                    informObserversAdded(
-                        null,
-                        this@PanelView,
-                        this@PanelView.components.indexOf(this@NewProperty),
-                        compJson,
-                        labelText.text,
-                        true
-                    )
+                    informObserversAdded(null, index, compJson, labelText.text, true)
                 }
 
                 else -> {
@@ -524,14 +421,7 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
                     repaint()
                     textField.addKeyListener(Keyboard(textField, object : UpdatedAction {
                         override fun invoke(text: String) {
-                            if (text.isNotEmpty())
-                                informObserversAdded(
-                                    text,
-                                    this@PanelView,
-                                    this@PanelView.components.indexOf(this@NewProperty),
-                                    compJson,
-                                    labelText.text
-                                )
+                            informObserversAdded(text, index, compJson, labelText.text)
                         }
                     }))
                 }

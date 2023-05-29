@@ -118,11 +118,8 @@ fun Any.toJSON(parent : CompositeJSON? = null, name : String? = null): JsonEleme
         throw IllegalArgumentException("The name of the object must be informed when the parent is a ObjectJSON.")
     return if (parent is ObjectJSON && name != null) {
         when (this) {
-            is String -> {
-                if (this.isEmpty()) JSONNull(parent = parent, name = name)
-                else
-                    JSONString(value = this, parent = parent, name = name)
-            }
+            "" -> JSONNull(parent = parent, name = name)
+            is String -> JSONString(value = this, parent = parent, name = name)
             is Char -> JSONString(value = this.toString(), parent = parent, name = name)
             is Boolean -> JSONBoolean(value = this, parent = parent, name = name)
             is Number -> JSONNumber(value = this, parent = parent, name = name)
@@ -133,11 +130,8 @@ fun Any.toJSON(parent : CompositeJSON? = null, name : String? = null): JsonEleme
         }
     } else {
         when (this) {
-            is String -> {
-                if (this.isEmpty()) JSONNull(parent = parent)
-                else
-                    JSONString(value = this, parent = parent)
-            }
+            "" -> JSONNull(parent = parent)
+            is String -> JSONString(value = this, parent = parent)
             is Char -> JSONString(value = this.toString(), parent = parent)
             is Boolean -> JSONBoolean(value = this, parent = parent)
             is Number -> JSONNumber(value = this, parent = parent)

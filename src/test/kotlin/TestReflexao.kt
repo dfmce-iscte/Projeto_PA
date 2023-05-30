@@ -99,19 +99,6 @@ class TestReflexao {
     }
 
     @Test
-    fun testReflexaoDataClass() {
-        val obj = Point(3, 2)
-        val p = Person("ZE", 7)
-        //obj.toJSON()
-        val json = obj.toJSON()
-        val json1 = p.toJSON()
-        println(json1)
-        // println(json.properties)
-        println(json.toString())
-
-    }
-
-    @Test
     fun testReflexaoMix() {
         val obj = Mix("Mix")
         println(obj.toJSON())
@@ -122,7 +109,7 @@ class TestReflexao {
         val obj = MixExclude("Mix")
         val json = obj.toJSON()
         if (json is ObjectJSON) {
-            assertEquals(json.getProperties()["string"],null)
+            assertFalse("string" in json.getProperties())
         }
 
     }
@@ -136,7 +123,7 @@ class TestReflexao {
             println(json)
         }
     }
-    //VER QUANDO A TAG ESTÁ PARA LISTAS OU HASHMAPS
+
 
     @Test
     fun testReflexaoChangeName() {

@@ -16,7 +16,7 @@ class AddCommand(
     private val parent: CompositeJSON,
     private val key: String?,
     private val newIsArray: Boolean?
-) : Command(model) {
+) : Command {
     private var jsonElement: JsonElement? = null
 
     override fun run() {
@@ -62,7 +62,7 @@ class DeleteCommand(
     private val panelView: PanelView,
     private val parent: CompositeJSON,
     private val key: String?
-) : Command(model) {
+) : Command {
     private var jsonElement: JsonElement? = null
     private var componentRemoved: Component? = null
 
@@ -98,7 +98,7 @@ class UpdateCommand(
     private val indexToReplace: Int,
     private val panelView: PanelView,
     private val key: String?
-) : Command(model) {
+) : Command {
 
     private var newJson: JsonElement? = null
     private val oldValue =

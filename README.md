@@ -1,3 +1,7 @@
+#Projeto PA MEI
+93028 Diogo Cosme
+92399 Pedro d'Oliveira
+
 O principal objetivo deste biblioteca consiste na criação de objetos JSON a partir de data class.
 Utilizando como exemplo a seguinte class:
 

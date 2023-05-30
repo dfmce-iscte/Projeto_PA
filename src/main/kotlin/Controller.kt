@@ -2,27 +2,26 @@ import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.Font
 import java.awt.GridLayout
-import java.awt.event.KeyAdapter
-import java.awt.event.KeyEvent
 import javax.swing.*
 
 
 fun main() {
     Editor().open()
 }
+
 data class Point(val x: Int, val y: Int)
 data class Mix(val name: String = "") {
     val list = arrayListOf(1, 2, 3, 4)
-    //    val listChar = arrayListOf('c', 'f', 'g')
+    val listChar = arrayListOf('c', 'f', 'g')
     val number = 0
     val decimal = 15.56
-    //    val char = 'c'
-//    val string = "STRING"
-//    val nullProperty = null
+    val char = 'c'
+    val string = "STRING"
+    val nullProperty = null
     val point = Point(1, 2)
     val bool = true
-//    val hasMap = hashMapOf("foo" to 1, "bar" to 2)
-//    var set = setOf(1, 2, 3, 2, 1)
+    val hasMap = hashMapOf("foo" to 1, "bar" to 2)
+    var set = setOf(1, 2, 3, 2, 1)
 
 }
 
@@ -45,7 +44,7 @@ class Editor {
         val total = JPanel().apply {
             layout = GridLayout(0, 2)
 
-            val scrollPane= JScrollPane().apply {
+            val scrollPane = JScrollPane().apply {
                 horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS
                 verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_ALWAYS
 
@@ -60,7 +59,7 @@ class Editor {
                         newIsArray: Boolean?
                     ) {
 //                println("Element added text : $text")
-                        val cmd = AddCommand(model,text, panelView, indexToReplace, parent, name, newIsArray)
+                        val cmd = AddCommand(text, panelView, indexToReplace, parent, name, newIsArray)
                         commands.add(cmd)
                         cmd.run()
                     }
@@ -71,8 +70,21 @@ class Editor {
                         parent: CompositeJSON,
                         key: String?
                     ) {
-                        val cmd = DeleteCommand(model,indexToRemove, panelView, parent, key)
-                        commands.add(cmd)
+                        var cmd: DeleteCommand? = null
+                        if (indexToRemove == -1) {
+                            println("indexToRemove == -1")
+                            when (val parentOfpanel = panelView.parent) {
+                                is PanelView.ObjectProperty -> {
+                                    println("ObjectProperty Index ${parentOfpanel.parent.components.indexOf(parentOfpanel)}")
+                                    cmd = DeleteCommand(parentOfpanel.parent.components.indexOf(parentOfpanel), (parentOfpanel.parent as PanelView), parent.parent!!, key)
+                                }
+                                is PanelView -> {
+                                    println("PanelView Index ${parentOfpanel.components.indexOf(parentOfpanel)}")
+                                    cmd = DeleteCommand(parentOfpanel.components.indexOf(parentOfpanel), parentOfpanel, parent.parent!!, key)
+                                }
+                            }
+                        } else cmd = DeleteCommand(indexToRemove, panelView, parent, key)
+                        commands.add(cmd!!)
                         cmd.run()
                     }
 
@@ -83,7 +95,7 @@ class Editor {
                         panelView: PanelView,
                         key: String?
                     ) {
-                        val cmd = UpdateCommand(model, newValue, json, indexToReplace, panelView, key)
+                        val cmd = UpdateCommand(newValue, json, indexToReplace, panelView, key)
                         commands.add(cmd)
                         cmd.run()
                     }
@@ -102,18 +114,18 @@ class Editor {
                 layout = BorderLayout()
                 val textArea = JTextArea().apply {
                     size = Dimension(300, 550)
-                    tabSize=2
+                    tabSize = 2
                     text = "$model"
                     isEditable = false
                     font = Font("SansSerif", Font.BOLD, 20)
                 }
 
-                model.addObserver(object : JsonElementObserver {
-                    override fun elementAdded(children: JsonElement) {
+                model.addObserver(object : CompositeJsonObserver {
+                    override fun elementAdded() {
                         textArea.text = "$model"
                     }
 
-                    override fun elementRemoved(children: JsonElement) {
+                    override fun elementRemoved() {
                         textArea.text = "$model"
                     }
 

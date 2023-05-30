@@ -1,14 +1,15 @@
 import java.awt.Component
 import javax.swing.JCheckBox
+import javax.swing.JComponent
+import javax.swing.JLabel
 import javax.swing.JTextField
 
-abstract class Command(private val model: ObjectJSON) {
-    abstract fun run()
-    abstract fun undo()
+interface Command {
+     fun run()
+     fun undo()
 }
 
 class AddCommand(
-    private val model: ObjectJSON,
     private val text: String?,
     private val panelView: PanelView,
     private val indexToReplace: Int,
@@ -20,47 +21,43 @@ class AddCommand(
 
     override fun run() {
         if (text == null && parent is ObjectJSON && key != null && newIsArray != null) {
-            if (!newIsArray) {
-//                println("Parent is object and new is object")
-                jsonElement = ObjectJSON(parent = parent, name = key)
-                panelView.replaceComponent(indexToReplace, jsonElement as ObjectJSON, key)
+            jsonElement = if (!newIsArray) {
+                //                println("Parent is object and new is object")
+                ObjectJSON(parent = parent, name = key)
             } else {
-//                println("Parent is object and new is array")
-                jsonElement = ArrayJSON(parent = parent, name = key)
-                panelView.replaceComponent(indexToReplace, jsonElement as ArrayJSON, key)
+                //                println("Parent is object and new is array")
+                ArrayJSON(parent = parent, name = key)
             }
         } else if (text == null && parent is ArrayJSON && newIsArray != null) {
-            if (!newIsArray) {
-//                println("Parent is array and new is object")
-                jsonElement = ObjectJSON(parent = parent)
-                panelView.replaceComponent(indexToReplace, jsonElement as ObjectJSON)
+            jsonElement = if (!newIsArray) {
+                //                println("Parent is array and new is object")
+                ObjectJSON(parent = parent)
             } else {
-//                println("Parent is array and new is array")
-                jsonElement = ArrayJSON(parent = parent)
-                panelView.replaceComponent(indexToReplace, jsonElement as ArrayJSON)
+                //                println("Parent is array and new is array")
+                ArrayJSON(parent = parent)
             }
         } else if (text == null || text == "null") {
 //            println("Text is null")
             jsonElement = checkType("").toJSON(parent = parent, name = key)
-            panelView.replaceComponent(indexToReplace, jsonElement!!, key)
         } else {
             jsonElement = checkType(text).toJSON(parent = parent, name = key)
-            panelView.replaceComponent(indexToReplace, jsonElement!!, key)
         }
-        model.updateJSON()
+        panelView.replaceComponent(indexToReplace, jsonElement!!, key)
     }
 
     override fun undo() {
         if (parent is ObjectJSON && key != null) parent.removeByKey(key)
         else if (parent is ArrayJSON) parent.removeByIndex(indexToReplace)
+//        println("Remove index $indexToReplace Size before ${panelView.components.size}")
         panelView.remove(indexToReplace)
-        println("Undo AddCommand")
-        model.updateJSON()
+        if (panelView.components.isEmpty())
+            panelView.revalidateAndRepaint()
+
+//        println("Remove index $indexToReplace Size after ${panelView.components.size}")
     }
 }
 
 class DeleteCommand(
-    private val model: ObjectJSON,
     private val indexToRemove: Int,
     private val panelView: PanelView,
     private val parent: CompositeJSON,
@@ -75,8 +72,8 @@ class DeleteCommand(
             is ArrayJSON -> parent.removeByIndex(indexToRemove)
         }
         componentRemoved = panelView.removeProperty(indexToRemove)
-        model.updateJSON()
     }
+
 
     override fun undo() {
         when (parent) {
@@ -90,12 +87,12 @@ class DeleteCommand(
                 componentRemoved?.let { panelView.add(it, indexToRemove) }
             }
         }
-        model.updateJSON()
+        if (panelView.components.size == 1)
+            panelView.revalidateAndRepaint()
     }
 }
 
 class UpdateCommand(
-    private val model: ObjectJSON,
     private val newValue: Any,
     private val json: JsonElement,
     private val indexToReplace: Int,
@@ -126,33 +123,45 @@ class UpdateCommand(
         if ((newJson is JSONBoolean && oldJson !is JSONBoolean) || newJson is JSONNull) {
             panelView.replaceComponent(indexToReplace, newJson!!, key)
         }
-        println("Run Update Old json: $oldJson")
-        println("Run Update New Json $newJson")
-        model.updateJSON()
+//        println("Run Update Old json: $oldJson")
+//        println("Run Update New Json $newJson")
     }
 
     override fun undo() {
-        println("Undo Update oldJson: $newJson")
-        println("Undo Update newJson: $oldJson")
-        if (json.parent is ArrayJSON)
+//        println("Undo Update oldJson: $newJson")
+//        println("Undo Update newJson: $oldJson")
+        if (json.parent is ArrayJSON) {
             newJson = newJson?.let { (json.parent as ArrayJSON).updateChildren(indexToReplace, oldValue) }
-        else if (json is ObjectJSON)
-            newJson = oldValue.toJSON(parent = json, name = key)
-
-        when (val comp = panelView.components[indexToReplace]) {
-            is PanelView.ObjectProperty -> checkComponent(comp.components[1])
-            else -> checkComponent(comp)
+            checkComponent(panelView.components[indexToReplace], indexToReplace)
         }
-        model.updateJSON()
+        else if (json is ObjectJSON) {
+            newJson = oldValue.toJSON(parent = json, name = key)
+            getComponentOfObjectProperty()?.let { checkComponent(it, panelView.components.indexOf(it.parent)) }
+        }
     }
 
-    private fun checkComponent(comp: Component) {
+    private fun getComponentOfObjectProperty() : Component? {
+        key?.let {
+            panelView.components.forEach {
+                if (it is PanelView.ObjectProperty)
+                    when (val label = it.components[0]) {
+                        is JLabel -> {
+//                            println("Label text: ${label.text} key: $key")
+                            if (label.text == key) return it.components[1]
+                        }
+                    }
+            }
+        }
+        return null
+    }
+
+    private fun checkComponent(comp: Component, index : Int) {
         if (comp is JTextField && oldJson !is JSONNull)
             comp.text = oldValue.toString()
         else if (comp is JCheckBox && oldJson is JSONBoolean)
             comp.isSelected = oldValue as Boolean
         else
-            panelView.replaceComponent(indexToReplace, oldJson!!, key)
+            panelView.replaceComponent(index, oldJson!!, key)
     }
     private fun getValue(json: JsonElement?): Any {
 //        println("Get value $json")

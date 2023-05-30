@@ -20,11 +20,11 @@ sealed interface JsonElement {
     }
 
 }
-interface JsonElementObserver {
+interface CompositeJsonObserver {
 
-    fun elementAdded(children: JsonElement) {}
+    fun elementAdded() {}
 
-    fun elementRemoved(children: JsonElement) {}
+    fun elementRemoved() {}
     fun updateJSON() {}
 }
 
@@ -42,23 +42,24 @@ interface Visitor {
 
 sealed interface CompositeJSON : JsonElement {
     override val parent: CompositeJSON?
-    val observers : MutableList<JsonElementObserver>
+    val observers : MutableList<CompositeJsonObserver>
 
-    fun addObserver(observer: JsonElementObserver) = observers.add(observer)
+    fun addObserver(observer: CompositeJsonObserver)
 
-    fun removeObserver(observer: JsonElementObserver) = observers.remove(observer)
+    fun removeObserver(observer: CompositeJsonObserver)
 
     fun updateJSON () {
         observers.forEach { it.updateJSON() }
     }
 
-    fun informElementAdded(children: JsonElement) {
-        observers.forEach { it.elementAdded(children) }
+    fun informElementAdded() {
+        observers.forEach { it.elementAdded() }
     }
 
-    fun informElementRemoved(children: JsonElement) {
-        observers.forEach { it.elementRemoved(children) }
+    fun informElementRemoved() {
+        observers.forEach { it.elementRemoved() }
     }
+
 
 
     override fun accept(v: Visitor)
@@ -71,7 +72,7 @@ sealed interface CompositeJSON : JsonElement {
 }
 
 class ObjectJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
-    override val observers = mutableListOf<JsonElementObserver>()
+    override val observers = mutableListOf<CompositeJsonObserver>()
     constructor(parent: ObjectJSON, name: String) : this(parent) {
         parent.addElement(name, this)
     }
@@ -82,15 +83,25 @@ class ObjectJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
 
     private val properties: LinkedHashMap<String, JsonElement> = LinkedHashMap()
 
+    override fun addObserver(observer: CompositeJsonObserver) {
+        observers.add(observer)
+        properties.forEach {
+            val value = it.value
+            if (value is CompositeJSON)
+                value.addObserver(observer)
+        }
+    }
+
+    override fun removeObserver(observer: CompositeJsonObserver) {
+        observers.remove(observer)
+        properties.forEach {
+            val value = it.value
+            if (value is CompositeJSON)
+                value.removeObserver(observer)
+        }
+    }
 
     fun getProperties() = properties.toMap()
-
-    fun getKey(value: JsonElement):String {
-        properties.forEach{
-            if (it.value === value) return it.key
-        }
-        return ""
-    }
 
     private fun auxToString(): String {
         return properties.map { "\n"+"\t".repeat(it.value.depth)+"\"${it.key}\":${it.value}" }.joinToString(prefix = "{", postfix = "\n"+"\t".repeat(this.depth)+"}")
@@ -102,7 +113,9 @@ class ObjectJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
 //        observers.forEach { element.addObserver(it) }
 //        println("Name: $name Element: $element")
         properties[name] = element
-        informElementAdded(element)
+        if (element is CompositeJSON)
+            observers.forEach { element.addObserver(it) }
+        informElementAdded()
     }
 
     override fun accept(v: Visitor) {
@@ -115,15 +128,19 @@ class ObjectJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
         properties.forEach{
             if (it.value === children) properties.remove(it.key) //comprar pelas instancias e nao pelo value
         }
-        informElementRemoved(children)
+        informElementRemoved()
     }
 
-    fun removeByKey(key : String) = properties.remove(key)
+    fun removeByKey(key : String) : JsonElement? {
+        val removed = properties.remove(key)
+        informElementRemoved()
+        return removed
+    }
 
 }
 
 class ArrayJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
-    override val observers = mutableListOf<JsonElementObserver>()
+    override val observers = mutableListOf<CompositeJsonObserver>()
     constructor(parent: ObjectJSON, name: String) : this(parent) {
         parent.addElement(name, this)
     }
@@ -132,11 +149,31 @@ class ArrayJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
         if (parent is ArrayJSON) parent.addElement(this)
     }
 
-    fun removeByIndex(index: Int) =
-        elements.removeAt(index)
+    fun removeByIndex(index: Int) : JsonElement {
+        val removed = elements.removeAt(index)
+        informElementRemoved()
+        return removed
+    }
 
 
     private val elements = mutableListOf<JsonElement>()
+
+    override fun addObserver(observer: CompositeJsonObserver) {
+        observers.add(observer)
+        elements.forEach {
+            if (it is CompositeJSON)
+                it.addObserver(observer)
+        }
+    }
+
+    override fun removeObserver(observer: CompositeJsonObserver) {
+        observers.remove(observer)
+        elements.forEach {
+            if (it is CompositeJSON)
+                it.removeObserver(observer)
+        }
+    }
+
 
     val getElements : MutableList<JsonElement>
         get() = elements
@@ -146,7 +183,9 @@ class ArrayJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
 //        observers.forEach { element.addObserver(it) }
         if (index != null) elements.add(index, element)
         else elements.add(element)
-        informElementAdded(element)
+        if (element is CompositeJSON)
+            observers.forEach { element.addObserver(it) }
+        informElementAdded()
     }
 
     override fun accept(v: Visitor) {
@@ -161,7 +200,7 @@ class ArrayJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
 
     override fun removeChildren(children: JsonElement) {
         elements.remove(children)
-        informElementRemoved(children)
+        informElementRemoved()
     }
 
     fun updateChildren(index: Int, value: Any?) : JsonElement{
@@ -172,6 +211,9 @@ class ArrayJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
 
         elements[index] = newValue
         elements.removeAt(elements.size - 1)
+
+        updateJSON()
+
         return newValue
     }
 

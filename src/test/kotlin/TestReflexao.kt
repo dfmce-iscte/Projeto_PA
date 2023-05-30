@@ -129,9 +129,6 @@ class TestReflexao {
 
     @Test
     fun testReflexaoToJsonString() {
-//        val x=ObjectJSON()
-//        val z=JSONNumber(x,14,"nome")
-//        println(x.properties["nome"].)
         val obj = MixToJsonString("Mix")
         val json = obj.toJSON()
         if (json is ObjectJSON) {

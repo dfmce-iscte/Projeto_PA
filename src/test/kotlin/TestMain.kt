@@ -58,6 +58,5 @@ class TestMain {
         val searchfor = SearchForObject("numero", "nome")
         rootObject.accept(searchfor)
         assertEquals(2, searchfor.list.size)
-        //cenas
     }
 }

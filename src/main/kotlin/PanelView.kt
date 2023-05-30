@@ -66,6 +66,11 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
         }
     }
 
+    fun revalidateAndRepaint() {
+        revalidate()
+        repaint()
+    }
+
     fun replaceComponent(indexToReplace: Int, json: JsonElement, key: String? = null) {
         if (indexToReplace < components.size) remove(indexToReplace)
         if (key != null) {
@@ -92,8 +97,6 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
         }
     }
 
-    private fun checkIfIsNullORBoolean(value: Any) = (value is String && value.isEmpty()) || (value is Boolean)
-
     private fun informObserversUpdated(newValue: Any, indexToReplace: Int, name: String? = null) {
         if (compJson is ArrayJSON)
             observers.forEach {
@@ -106,9 +109,9 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
     }
 
     private fun informObserversAdded(
-        text: String? = null,
         indexToReplace: Int,
         parent: CompositeJSON,
+        text: String? = null,
         key: String? = null,
         newIsArray: Boolean? = null
     ) {
@@ -145,8 +148,7 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
 
     private fun addNewProperty(new: String) {
         add(NewProperty(new))
-        revalidate()
-        repaint()
+        revalidateAndRepaint()
     }
 
     private fun addNewPropertyArray(new: String) {
@@ -156,20 +158,17 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
                 val field = JTextField()
                 field.addKeyListener(Keyboard(field, object : UpdatedAction {
                     override fun invoke(text: String) {
-                        informObserversAdded(text, components.indexOf(field), compJson)
+                        informObserversAdded(components.indexOf(field), compJson, text = text)
                     }
                 }))
                 add(field)
-                revalidate()
-                repaint()
+                revalidateAndRepaint()
             }
-
             IS_ARRAY -> {
-                informObserversAdded(null, components.size, compJson, newIsArray = true)
+                informObserversAdded(components.size, compJson, newIsArray = true)
             }
-
             else -> {
-                informObserversAdded(null, components.size, compJson, newIsArray = false)
+                informObserversAdded(components.size, compJson, newIsArray = false)
             }
         }
     }
@@ -402,12 +401,12 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
             when (new) {
                 IS_OBJECT -> {
                     removeAll()
-                    informObserversAdded(null, index, compJson, labelText.text, false)
+                    informObserversAdded(index, compJson, key = labelText.text, newIsArray =  false)
                 }
 
                 IS_ARRAY -> {
                     removeAll()
-                    informObserversAdded(null, index, compJson, labelText.text, true)
+                    informObserversAdded(index, compJson, key = labelText.text, newIsArray = true)
                 }
 
                 else -> {
@@ -421,7 +420,7 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
                     repaint()
                     textField.addKeyListener(Keyboard(textField, object : UpdatedAction {
                         override fun invoke(text: String) {
-                            informObserversAdded(text, index, compJson, labelText.text)
+                            informObserversAdded(index, compJson, text = text, key = labelText.text)
                         }
                     }))
                 }

@@ -390,7 +390,7 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
             val textField = JTextField()
             textField.addKeyListener(Keyboard(textField, object : UpdatedAction {
                 override fun invoke(text: String) {
-                    if (text.isNotEmpty() && !text.contains(" ")) removeInitialTextFieldAndAddLabelAndTextField(textField)
+                    if (text.isNotEmpty() && !text.contains(" ") && (compJson as ObjectJSON).getProperties()[text] == null) removeInitialTextFieldAndAddLabelAndTextField(textField)
                 }
             }))
             add(textField)

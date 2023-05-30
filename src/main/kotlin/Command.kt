@@ -86,6 +86,7 @@ class DeleteCommand(
                 jsonElement?.let { parent.addElement(it, indexToRemove) }
                 componentRemoved?.let { panelView.add(it, indexToRemove) }
             }
+
         }
         if (panelView.components.size == 1)
             panelView.revalidateAndRepaint()

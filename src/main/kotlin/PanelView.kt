@@ -1,6 +1,8 @@
+import com.sun.org.apache.xalan.internal.lib.ExsltStrings
 import java.awt.*
 import java.awt.event.*
 import javax.swing.*
+import javax.swing.border.EmptyBorder
 
 interface PanelViewObserver {
     fun elementAdded(
@@ -55,6 +57,8 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
 
     init {
         layout = GridLayout(0, 1)
+//        border = EmptyBorder(5, 5, 5, 5)
+
         if (compJson is ArrayJSON) {
             compJsonIsArray(compJson)
             addMouseListenerToComponent(true)
@@ -115,7 +119,7 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
         key: String? = null,
         newIsArray: Boolean? = null
     ) {
-        println("informObserversAdded: $text")
+//        println("informObserversAdded: $text")
         observers.forEach { it.elementAdded(text, this, indexToReplace, parent, key, newIsArray) }
     }
 

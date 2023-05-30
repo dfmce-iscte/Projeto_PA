@@ -76,12 +76,12 @@ class ObjectJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
     constructor(parent: ObjectJSON, name: String) : this(parent) {
         parent.addElement(name, this)
     }
+    private val properties: LinkedHashMap<String, JsonElement> = LinkedHashMap()
 
     init {
         if (parent is ArrayJSON) parent.addElement(this)
     }
 
-    private val properties: LinkedHashMap<String, JsonElement> = LinkedHashMap()
 
     override fun addObserver(observer: CompositeJsonObserver) {
         observers.add(observer)
@@ -141,6 +141,7 @@ class ObjectJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
 
 class ArrayJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
     override val observers = mutableListOf<CompositeJsonObserver>()
+    private val elements = mutableListOf<JsonElement>()
     constructor(parent: ObjectJSON, name: String) : this(parent) {
         parent.addElement(name, this)
     }
@@ -156,7 +157,6 @@ class ArrayJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
     }
 
 
-    private val elements = mutableListOf<JsonElement>()
 
     override fun addObserver(observer: CompositeJsonObserver) {
         observers.add(observer)
@@ -183,8 +183,13 @@ class ArrayJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
 //        observers.forEach { element.addObserver(it) }
         if (index != null) elements.add(index, element)
         else elements.add(element)
+        println("Before add observer element: $element")
         if (element is CompositeJSON)
-            observers.forEach { element.addObserver(it) }
+            observers.forEach {
+                println("Adding observer to element: $element")
+                element.addObserver(it)
+            }
+        println("After add observer element: $element")
         informElementAdded()
     }
 

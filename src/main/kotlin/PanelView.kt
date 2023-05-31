@@ -1,8 +1,9 @@
-import com.sun.org.apache.xalan.internal.lib.ExsltStrings
 import java.awt.*
 import java.awt.event.*
 import javax.swing.*
-import javax.swing.border.EmptyBorder
+import javax.swing.border.CompoundBorder
+import javax.swing.border.LineBorder
+
 
 interface PanelViewObserver {
     fun elementAdded(
@@ -57,7 +58,9 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
 
     init {
         layout = GridLayout(0, 1)
-//        border = EmptyBorder(5, 5, 5, 5)
+        val lineBorder = LineBorder(Color.BLACK, 4, true)
+        val emptyBorder = BorderFactory.createEmptyBorder(10, 5, 10, 5)
+        border = CompoundBorder(emptyBorder, lineBorder)
 
         if (compJson is ArrayJSON) {
             compJsonIsArray(compJson)
@@ -81,7 +84,7 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
             add(ObjectProperty(key, json), indexToReplace)
         } else if (json is CompositeJSON) {
             val panel = PanelView(json).apply {
-                border = BorderFactory.createRaisedBevelBorder()
+                //border = BorderFactory.createRaisedBevelBorder()
             }
             observers.forEach { panel.addObserver(it) }
             add(panel, indexToReplace)
@@ -123,7 +126,11 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
         observers.forEach { it.elementAdded(text, this, indexToReplace, parent, key, newIsArray) }
     }
 
-    private fun informObserversRemoved(indexToRemove: Int, key: String? = null, componentIsPanelView: PanelView? = null) {
+    private fun informObserversRemoved(
+        indexToRemove: Int,
+        key: String? = null,
+        componentIsPanelView: PanelView? = null
+    ) {
         observers.forEach {
             if (componentIsPanelView != null && componentIsPanelView.parent is PanelView && compJson.parent != null) {
                 it.elementRemoved(indexToRemove, componentIsPanelView.parent as PanelView, compJson.parent!!, key)
@@ -136,7 +143,7 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
         observers.forEach { it.updateNullValue(this, indexToReplace, key) }
     }
 
-    fun removeProperty(indexToRemove: Int) : Component? {
+    fun removeProperty(indexToRemove: Int): Component? {
         if (compJson.parent == null && components.isEmpty()) return null
         /*if (components.size == 1) {
             (parent as? ObjectProperty)?.removeObjectProperty()
@@ -168,9 +175,11 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
                 add(field)
                 revalidateAndRepaint()
             }
+
             IS_ARRAY -> {
                 informObserversAdded(components.size, compJson, newIsArray = true)
             }
+
             else -> {
                 informObserversAdded(components.size, compJson, newIsArray = false)
             }
@@ -182,7 +191,7 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
             is JSONBoolean -> setUpCheckBox(value.getValue, key)
             is JSONNull -> setUpCheckNull()
             else -> {
-                setUpTextField(value.toString().replace("\"",""), key = key)
+                setUpTextField(value.toString().replace("\"", ""), key = key)
             }
         }
         result.addMouseListenerToComponent(false)
@@ -194,7 +203,7 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
             when (value) {
                 is JSONBoolean -> setUpCheckBox(value.getValue)
                 is JSONNull -> setUpCheckNull()
-                else -> setUpTextField(value.toString().replace("\"",""))
+                else -> setUpTextField(value.toString().replace("\"", ""))
             }
         result.addMouseListenerToComponent(true)
         return result
@@ -243,8 +252,17 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
                 override fun mouseClicked(e: MouseEvent?) {
                     if (e?.button == MouseEvent.BUTTON1)
                         when (compJson) {
-                            is ArrayJSON -> informObserversUpdated(isSelected, name = key, indexToReplace = this@PanelView.components.indexOf(this@apply))
-                            else -> informObserversUpdated(isSelected, name = key, indexToReplace = this@PanelView.components.indexOf(this@apply.parent))
+                            is ArrayJSON -> informObserversUpdated(
+                                isSelected,
+                                name = key,
+                                indexToReplace = this@PanelView.components.indexOf(this@apply)
+                            )
+
+                            else -> informObserversUpdated(
+                                isSelected,
+                                name = key,
+                                indexToReplace = this@PanelView.components.indexOf(this@apply.parent)
+                            )
                         }
                 }
             })
@@ -261,9 +279,16 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
                 override fun invoke(text: String) {
                     val textInRightType = checkType(text)
                     if (compJson is ArrayJSON) {
-                        informObserversUpdated(textInRightType, indexToReplace = this@PanelView.components.indexOf(this@apply))
+                        informObserversUpdated(
+                            textInRightType,
+                            indexToReplace = this@PanelView.components.indexOf(this@apply)
+                        )
                     } else if (compJson is ObjectJSON && key != null) {
-                        informObserversUpdated(textInRightType, name = key, indexToReplace = this@PanelView.components.indexOf(this@apply.parent))
+                        informObserversUpdated(
+                            textInRightType,
+                            name = key,
+                            indexToReplace = this@PanelView.components.indexOf(this@apply.parent)
+                        )
                     }
                 }
             }))
@@ -289,7 +314,8 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
 
         override fun mouseClicked(e: MouseEvent?) {
             if (e?.button == MouseEvent.BUTTON1 && e.component is JLabel && !(e.component.parent is ObjectProperty &&
-                        e.component.parent.components.indexOf(e.component) == 0)) actionNALabel(e)
+                        e.component.parent.components.indexOf(e.component) == 0)
+            ) actionNALabel(e)
             else if (e?.button == MouseEvent.BUTTON3) actionRightClick(e)
         }
 
@@ -394,7 +420,9 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
             val textField = JTextField()
             textField.addKeyListener(Keyboard(textField, object : UpdatedAction {
                 override fun invoke(text: String) {
-                    if (text.isNotEmpty() && !text.contains(" ") && (compJson as ObjectJSON).getProperties()[text] == null) removeInitialTextFieldAndAddLabelAndTextField(textField)
+                    if (text.isNotEmpty() && !text.contains(" ") && (compJson as ObjectJSON).getProperties()[text] == null) removeInitialTextFieldAndAddLabelAndTextField(
+                        textField
+                    )
                 }
             }))
             add(textField)
@@ -405,7 +433,7 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
             when (new) {
                 IS_OBJECT -> {
                     removeAll()
-                    informObserversAdded(index, compJson, key = labelText.text, newIsArray =  false)
+                    informObserversAdded(index, compJson, key = labelText.text, newIsArray = false)
                 }
 
                 IS_ARRAY -> {

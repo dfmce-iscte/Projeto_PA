@@ -30,7 +30,7 @@ Criar array
  */
 
 class Editor {
-    //        val model = ObjectJSON()
+//            val model = ObjectJSON()
     val model = (Mix("ze").toJSON() as ObjectJSON)
 
     val commands = mutableListOf<Command>()

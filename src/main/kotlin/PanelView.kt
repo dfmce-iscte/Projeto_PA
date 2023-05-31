@@ -50,6 +50,7 @@ class PanelView(private val compJson: CompositeJSON) : JPanel() {
                 panel.addObserver(observer)
             }
         }
+        components.filterIsInstance<PanelView>().forEach{ it.addObserver(observer) }
     }
 
     fun removeObserver(observer: PanelViewObserver) {

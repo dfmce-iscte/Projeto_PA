@@ -183,13 +183,13 @@ class ArrayJSON(override val parent: CompositeJSON? = null) : CompositeJSON {
 //        observers.forEach { element.addObserver(it) }
         if (index != null) elements.add(index, element)
         else elements.add(element)
-        println("Before add observer element: $element")
+       // println("Before add observer element: $element")
         if (element is CompositeJSON)
             observers.forEach {
-                println("Adding observer to element: $element")
+             //   println("Adding observer to element: $element")
                 element.addObserver(it)
             }
-        println("After add observer element: $element")
+      //  println("After add observer element: $element")
         informElementAdded()
     }
 
